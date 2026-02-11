@@ -457,11 +457,13 @@ export const AppContextProvider = ({ children }) => {
     const fetchUser = async () => {
         try {
             const { data } = await axios.get('/api/user/is-auth');
+
             if (data.success) {
                 setUser(data.user);
-                setCartItems(data.user.cartItems || {});
-            } else {
-                setUser(null);
+                // 🔥 load cart from DB
+                if (data.user.cartItems) {
+                    setCartItems(data.user.cartItems);
+                }
             }
         } catch {
             setUser(null);
@@ -502,10 +504,15 @@ export const AppContextProvider = ({ children }) => {
         const updateCart = async () => {
             try {
                 await axios.post('/api/cart/update', { cartItems });
-            } catch {}
+            } catch { }
         };
-        if (user) updateCart();
+
+        // 🔥 ONLY update if cart has data
+        if (user && Object.keys(cartItems).length > 0) {
+            updateCart();
+        }
     }, [cartItems]);
+
 
     const addToCart = (itemId) => {
         let cartData = structuredClone(cartItems);
