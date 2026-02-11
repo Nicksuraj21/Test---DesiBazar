@@ -2679,49 +2679,19 @@ const Cart = () => {
     };
 
     /* ================= ADDRESS ================= */
-    // const getUserAddress = async () => {
-    //     try {
-    //         const { data } = await axios.get("/api/address/get");
-    //         if (data.success) {
-    //             setAddresses(data.addresses);
-    //             if (data.addresses.length > 0) {
-    //                 setSelectedAddress(data.addresses[0]);
-    //             }
-    //         }
-    //     } catch (error) {
-    //         toast.error(error.message);
-    //     }
-    // };
-
     const getUserAddress = async () => {
-    try {
-
-        // user ready nahi hua to call mat karo
-        if (!user) return;
-
-        const { data } = await axios.get("/api/address/get");
-
-        if (data.success) {
-
-            setAddresses(data.addresses || []);
-
-            // default select first address
-            if (data.addresses && data.addresses.length > 0) {
-                setSelectedAddress(data.addresses[0]);
-            } else {
-                setSelectedAddress(null);
+        try {
+            const { data } = await axios.get("/api/address/get");
+            if (data.success) {
+                setAddresses(data.addresses);
+                if (data.addresses.length > 0) {
+                    setSelectedAddress(data.addresses[0]);
+                }
             }
-
-        } else {
-            toast.error(data.message);
+        } catch (error) {
+            toast.error(error.message);
         }
-
-    } catch (error) {
-        console.log("Address fetch error:", error);
-        toast.error("Failed to load address");
-    }
-};
-
+    };
 
     /* ================= User se Location lo ================= */
     const getCurrentLocation = () => {
@@ -2800,92 +2770,44 @@ const Cart = () => {
     };
 
     /* ================= PLACE ORDER COD ================= */
-    // const placeOrder = async () => {
-    //     if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
-
-    //     if (!selectedAddress) {
-    //         return toast.error("Please select address");
-    //     }
-
-    //     setIsPlacingOrder(true); // 🔒 LOCK
-
-    //     try {
-    //         if (paymentOption === "COD") {
-    //             const { data } = await axios.post("/api/order/cod", {
-    //                 userId: user._id,
-    //                 items: cartArray.map(item => ({
-    //                     product: item._id,
-    //                     quantity: item.quantity
-    //                 })),
-    //                 address: selectedAddress._id,
-    //                 coupon,
-    //                 location: userLocation || null   // ✅ CHANGE
-    //             });
-
-    //             if (data.success) {
-    //                 toast.success(data.message);
-    //                 setCartItems({});
-    //                 navigate("/my-orders");
-    //             } else {
-    //                 toast.error(data.message);
-    //             }
-    //         } else {
-    //             await handleUpiPayment();
-    //         }
-    //     } catch (error) {
-    //         toast.error(error.message);
-    //     } finally {
-    //         setIsPlacingOrder(false); // 🔓 UNLOCK
-    //     }
-    // };
-
-
-
-
     const placeOrder = async () => {
-    if (isPlacingOrder) return;
+        if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
 
-    if (!selectedAddress) {
-        return toast.error("Please select address");
-    }
-
-    setIsPlacingOrder(true);
-
-    try {
-        if (paymentOption === "COD") {
-
-            const { data } = await axios.post("/api/order/cod", {
-                items: cartArray.map(item => ({
-                    product: item._id,
-                    quantity: item.quantity
-                })),
-                address: selectedAddress._id,
-                coupon,
-                location: userLocation || null
-            });
-
-            if (data.success) {
-                toast.success(data.message);
-                setCartItems({});
-                navigate("/my-orders");
-            } else {
-                toast.error(data.message);
-            }
-
-        } else {
-            await handleUpiPayment();
+        if (!selectedAddress) {
+            return toast.error("Please select address");
         }
 
-    } catch (error) {
-        toast.error(error.message);
-    } finally {
-        setIsPlacingOrder(false);
-    }
-};
+        setIsPlacingOrder(true); // 🔒 LOCK
 
+        try {
+            if (paymentOption === "COD") {
+                const { data } = await axios.post("/api/order/cod", {
+                    userId: user._id,
+                    items: cartArray.map(item => ({
+                        product: item._id,
+                        quantity: item.quantity
+                    })),
+                    address: selectedAddress._id,
+                    coupon,
+                    location: userLocation || null   // ✅ CHANGE
+                });
 
-
-
+                if (data.success) {
+                    toast.success(data.message);
+                    setCartItems({});
+                    navigate("/my-orders");
+                } else {
+                    toast.error(data.message);
+                }
+            } else {
+                await handleUpiPayment();
+            }
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            setIsPlacingOrder(false); // 🔓 UNLOCK
+        }
+    };
 
     useEffect(() => {
         if (products.length > 0) getCart();
@@ -2964,6 +2886,8 @@ const Cart = () => {
             <div className="max-w-[360px] w-full bg-white p-6 border border-gray-200 rounded-xl shadow-sm h-fit">
                 <h2 className="text-lg font-medium mb-4">Order Summary</h2>
 
+
+                {/* 
                 <p className="text-xs text-gray-400 uppercase">Delivery Address</p>
                 <p className="text-gray-600 text-sm mt-1">
                     {selectedAddress ? `${selectedAddress.street}, ${selectedAddress.city}` : "No address"}
@@ -2975,7 +2899,41 @@ const Cart = () => {
 
                 <button onClick={getCurrentLocation} className="text-primary text-xs mt-1 block">
                     📍 Use my current location
-                </button>
+                </button> */}
+
+
+                <p className="text-xs text-gray-400 uppercase">Delivery Address</p>
+
+                <div className="mt-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <p className="text-sm text-gray-700 leading-snug">
+                        {selectedAddress
+                            ? `${selectedAddress.street}, ${selectedAddress.city}`
+                            : "No address selected"}
+                    </p>
+
+                    <div className="flex gap-2 mt-3">
+                        {/* CHANGE BUTTON */}
+                        <button
+                            onClick={() => setShowAddress(!showAddress)}
+                            className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium"
+                        >
+                            Change
+                        </button>
+
+                        {/* LOCATION BUTTON */}
+                        <button
+                            onClick={getCurrentLocation}
+                            className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition font-medium flex items-center gap-1"
+                        >
+                            📍 Current Location
+                        </button>
+                    </div>
+                </div>
+
+
+
+
+
 
                 {userLocation && (
                     <p className="text-green-600 text-xs mt-1">
@@ -2997,9 +2955,16 @@ const Cart = () => {
                                 {a.street}, {a.city}
                             </p>
                         ))}
-                        <p onClick={() => navigate("/add-address")} className="p-2 text-primary text-sm cursor-pointer">
+                        {/* <p onClick={() => navigate("/add-address")} className="p-2 text-primary text-sm cursor-pointer">
                             Add address
-                        </p>
+                        </p> */}
+                        <button
+                            onClick={() => navigate("/add-address")}
+                            className="w-full text-left px-3 py-2 text-sm text-primary bg-primary/9 hover:bg-primary/14 rounded-md transition font-medium"
+                        >
+                            + Add New Address
+                        </button>
+
                     </div>
                 )}
 
