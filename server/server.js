@@ -330,9 +330,18 @@ const allowedOrigins = [
 // ==============================
 // MIDDLEWARE
 // ==============================
-app.use(express.json());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 app.use(cookieParser());
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(express.json());
+
+
+// app.use(express.json());
+// app.use(cookieParser());
+// app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // ==============================
 // ROUTES
