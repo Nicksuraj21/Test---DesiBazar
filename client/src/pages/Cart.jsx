@@ -2679,19 +2679,49 @@ const Cart = () => {
     };
 
     /* ================= ADDRESS ================= */
+    // const getUserAddress = async () => {
+    //     try {
+    //         const { data } = await axios.get("/api/address/get");
+    //         if (data.success) {
+    //             setAddresses(data.addresses);
+    //             if (data.addresses.length > 0) {
+    //                 setSelectedAddress(data.addresses[0]);
+    //             }
+    //         }
+    //     } catch (error) {
+    //         toast.error(error.message);
+    //     }
+    // };
+
     const getUserAddress = async () => {
-        try {
-            const { data } = await axios.get("/api/address/get");
-            if (data.success) {
-                setAddresses(data.addresses);
-                if (data.addresses.length > 0) {
-                    setSelectedAddress(data.addresses[0]);
-                }
+    try {
+
+        // user ready nahi hua to call mat karo
+        if (!user) return;
+
+        const { data } = await axios.get("/api/address/get");
+
+        if (data.success) {
+
+            setAddresses(data.addresses || []);
+
+            // default select first address
+            if (data.addresses && data.addresses.length > 0) {
+                setSelectedAddress(data.addresses[0]);
+            } else {
+                setSelectedAddress(null);
             }
-        } catch (error) {
-            toast.error(error.message);
+
+        } else {
+            toast.error(data.message);
         }
-    };
+
+    } catch (error) {
+        console.log("Address fetch error:", error);
+        toast.error("Failed to load address");
+    }
+};
+
 
     /* ================= User se Location lo ================= */
     const getCurrentLocation = () => {
