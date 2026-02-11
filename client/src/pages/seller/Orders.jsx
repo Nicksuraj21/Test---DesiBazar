@@ -813,9 +813,17 @@ const Orders = () => {
     }
   }
 
+  // useEffect(() => {
+  //   fetchOrders()
+  // }, [])
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    fetchOrders();
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 4000); // auto refresh every 4 sec
+    return () => clearInterval(interval);
+  }, []);
+
 
   const changeStatus = async (orderId, status) => {
     try {
