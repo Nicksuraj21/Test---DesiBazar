@@ -2800,44 +2800,92 @@ const Cart = () => {
     };
 
     /* ================= PLACE ORDER COD ================= */
+    // const placeOrder = async () => {
+    //     if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
+
+    //     if (!selectedAddress) {
+    //         return toast.error("Please select address");
+    //     }
+
+    //     setIsPlacingOrder(true); // 🔒 LOCK
+
+    //     try {
+    //         if (paymentOption === "COD") {
+    //             const { data } = await axios.post("/api/order/cod", {
+    //                 userId: user._id,
+    //                 items: cartArray.map(item => ({
+    //                     product: item._id,
+    //                     quantity: item.quantity
+    //                 })),
+    //                 address: selectedAddress._id,
+    //                 coupon,
+    //                 location: userLocation || null   // ✅ CHANGE
+    //             });
+
+    //             if (data.success) {
+    //                 toast.success(data.message);
+    //                 setCartItems({});
+    //                 navigate("/my-orders");
+    //             } else {
+    //                 toast.error(data.message);
+    //             }
+    //         } else {
+    //             await handleUpiPayment();
+    //         }
+    //     } catch (error) {
+    //         toast.error(error.message);
+    //     } finally {
+    //         setIsPlacingOrder(false); // 🔓 UNLOCK
+    //     }
+    // };
+
+
+
+
     const placeOrder = async () => {
-        if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
+    if (isPlacingOrder) return;
 
-        if (!selectedAddress) {
-            return toast.error("Please select address");
-        }
+    if (!selectedAddress) {
+        return toast.error("Please select address");
+    }
 
-        setIsPlacingOrder(true); // 🔒 LOCK
+    setIsPlacingOrder(true);
 
-        try {
-            if (paymentOption === "COD") {
-                const { data } = await axios.post("/api/order/cod", {
-                    userId: user._id,
-                    items: cartArray.map(item => ({
-                        product: item._id,
-                        quantity: item.quantity
-                    })),
-                    address: selectedAddress._id,
-                    coupon,
-                    location: userLocation || null   // ✅ CHANGE
-                });
+    try {
+        if (paymentOption === "COD") {
 
-                if (data.success) {
-                    toast.success(data.message);
-                    setCartItems({});
-                    navigate("/my-orders");
-                } else {
-                    toast.error(data.message);
-                }
+            const { data } = await axios.post("/api/order/cod", {
+                items: cartArray.map(item => ({
+                    product: item._id,
+                    quantity: item.quantity
+                })),
+                address: selectedAddress._id,
+                coupon,
+                location: userLocation || null
+            });
+
+            if (data.success) {
+                toast.success(data.message);
+                setCartItems({});
+                navigate("/my-orders");
             } else {
-                await handleUpiPayment();
+                toast.error(data.message);
             }
-        } catch (error) {
-            toast.error(error.message);
-        } finally {
-            setIsPlacingOrder(false); // 🔓 UNLOCK
+
+        } else {
+            await handleUpiPayment();
         }
-    };
+
+    } catch (error) {
+        toast.error(error.message);
+    } finally {
+        setIsPlacingOrder(false);
+    }
+};
+
+
+
+
 
     useEffect(() => {
         if (products.length > 0) getCart();

@@ -546,9 +546,9 @@ const AddAddress = () => {
 
     try {
       const { data } = await axios.post('/api/address/add', {
-        address,
-        userId: user._id   // 🔥 IMPORTANT FIX
-      })
+        address
+        // userId: user._id
+      });
 
       if (data.success) {
         toast.success("Address added")

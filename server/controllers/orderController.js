@@ -1919,6 +1919,261 @@
 
 
 
+// import Order from "../models/Order.js";
+// import Product from "../models/Product.js";
+// import User from "../models/User.js";
+
+
+// // ==============================
+// // AUTO PACK AFTER 2 MIN
+// // ==============================
+// export const autoPackOrders = async () => {
+//     try {
+//         const fiveMinAgo = new Date(Date.now() - 2 * 60 * 1000);
+
+//         await Order.updateMany(
+//             {
+//                 status: "Order Placed",
+//                 createdAt: { $lte: fiveMinAgo }
+//             },
+//             { status: "Packed" }
+//         );
+
+//     } catch (error) {
+//         console.log("Auto pack error:", error.message);
+//     }
+// };
+
+
+// // ==============================
+// // PLACE ORDER COD
+// // ==============================
+// export const placeOrderCOD = async (req, res) => {
+//     try {
+
+//         // 🧩 Order not placed without location validation 👇
+//         // if (
+//         //     !req.body.location ||
+//         //     typeof req.body.location.lat !== "number" ||
+//         //     typeof req.body.location.lng !== "number"
+//         // ) {
+//         //     return res.json({
+//         //         success: false,
+//         //         message: "Valid delivery location required"
+//         //     });
+//         // }
+
+
+//         // ✅ OPTIONAL location validation
+//         const location = req.body.location;
+
+//         if (location) {
+//             if (
+//                 typeof location.lat !== "number" ||
+//                 typeof location.lng !== "number"
+//             ) {
+//                 return res.json({
+//                     success: false,
+//                     message: "Invalid delivery location"
+//                 });
+//             }
+//         }
+
+
+//         const { userId, items, address, coupon } = req.body;
+
+//         if (!address || items.length === 0) {
+//             return res.json({ success: false, message: "Invalid data" })
+//         }
+
+//         let subtotal = 0;
+//         let itemsWithPrice = [];
+
+//         for (const item of items) {
+//             const product = await Product.findById(item.product);
+//             const price = product.offerPrice;
+
+//             subtotal += price * item.quantity;
+
+//             itemsWithPrice.push({
+//                 product: item.product,
+//                 quantity: item.quantity,
+//                 price: price
+//             });
+//         }
+
+//         const deliveryCharge = subtotal < 100 ? 40 : 0;
+
+//         let discount = 0;
+//         if (coupon) {
+//             if (coupon.toLowerCase() === "save10") {
+//                 discount = Math.floor(subtotal * 0.10);
+//             }
+//             else if (coupon.toLowerCase() === "off50") {
+//                 discount = 50;
+//             }
+//         }
+
+//         const amount = subtotal + deliveryCharge - discount;
+
+//         await Order.create({
+//             userId,
+//             items: itemsWithPrice,
+//             subtotal,
+//             deliveryCharge,
+//             tax: 0,
+//             discount,
+//             amount,
+//             address,
+//             paymentType: "COD",
+//             status: "Order Placed",
+
+//             location: req.body.location,   // 👈 THIS LINE
+
+//         });
+
+//         return res.json({ success: true, message: "Order Placed Successfully" })
+
+//     } catch (error) {
+//         return res.json({ success: false, message: error.message });
+//     }
+// }
+
+
+// // ==============================
+// // USER ORDERS
+// // ==============================
+// export const getUserOrders = async (req, res) => {
+//     try {
+//         const { userId } = req.body;
+
+//         const orders = await Order.find({
+//             userId,
+//             $or: [{ paymentType: "COD" }, { isPaid: true }]
+//         })
+//             .populate("items.product address")
+//             .sort({ createdAt: -1 });
+
+//         res.json({ success: true, orders });
+
+//     } catch (error) {
+//         res.json({ success: false, message: error.message });
+//     }
+// }
+
+
+// // ==============================
+// // CANCEL ORDER
+// // ==============================
+// export const cancelOrder = async (req, res) => {
+//     try {
+//         const { orderId } = req.body;
+
+//         const order = await Order.findById(orderId);
+//         if (!order) return res.json({ success: false, message: "Order not found" });
+
+//         if (order.paymentType !== "COD") {
+//             return res.json({ success: false, message: "Only COD cancel allowed" });
+//         }
+
+//         if (order.status !== "Order Placed") {
+//             return res.json({ success: false, message: "Cannot cancel" });
+//         }
+
+//         const created = new Date(order.createdAt).getTime();
+//         const now = Date.now();
+
+//         if (now - created > 2 * 60 * 1000) {
+//             return res.json({ success: false, message: "Cancel time expired" });
+//         }
+
+//         order.status = "Cancelled";
+//         await order.save();
+
+//         res.json({ success: true, message: "Order cancelled" });
+
+//     } catch (error) {
+//         res.json({ success: false, message: error.message });
+//     }
+// }
+
+
+// // ==============================
+// // SELLER ORDERS (ADMIN)
+// // ==============================
+// export const getAllOrders = async (req, res) => {
+//     try {
+//         const orders = await Order.find({
+//             $or: [{ paymentType: "COD" }, { isPaid: true }]
+//         })
+//             .populate("items.product address")
+//             .sort({ createdAt: -1 });
+
+//         res.json({ success: true, orders });
+
+//     } catch (error) {
+//         res.json({ success: false, message: error.message });
+//     }
+// };
+
+
+// // ==============================
+// // ADMIN STATUS UPDATE
+// // ==============================
+// export const updateOrderStatus = async (req, res) => {
+//     try {
+//         const { orderId, status } = req.body;
+
+//         await Order.findByIdAndUpdate(orderId, { status });
+
+//         res.json({
+//             success: true,
+//             message: "Status updated"
+//         });
+
+//     } catch (error) {
+//         res.json({
+//             success: false,
+//             message: error.message
+//         });
+//     }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
@@ -1951,22 +2206,26 @@ export const autoPackOrders = async () => {
 export const placeOrderCOD = async (req, res) => {
     try {
 
-        // 🧩 Order not placed without location validation 👇
-        // if (
-        //     !req.body.location ||
-        //     typeof req.body.location.lat !== "number" ||
-        //     typeof req.body.location.lng !== "number"
-        // ) {
-        //     return res.json({
-        //         success: false,
-        //         message: "Valid delivery location required"
-        //     });
-        // }
+        // 🔥 USER ID FROM TOKEN (MOST IMPORTANT FIX)
+        const userId = req.userId;
 
+        if (!userId) {
+            return res.json({
+                success: false,
+                message: "User not authorized"
+            });
+        }
 
-        // ✅ OPTIONAL location validation
-        const location = req.body.location;
+        const { items, address, coupon, location } = req.body;
 
+        if (!address || !items || items.length === 0) {
+            return res.json({
+                success: false,
+                message: "Invalid order data"
+            });
+        }
+
+        // LOCATION VALIDATION (optional)
         if (location) {
             if (
                 typeof location.lat !== "number" ||
@@ -1979,20 +2238,14 @@ export const placeOrderCOD = async (req, res) => {
             }
         }
 
-
-        const { userId, items, address, coupon } = req.body;
-
-        if (!address || items.length === 0) {
-            return res.json({ success: false, message: "Invalid data" })
-        }
-
         let subtotal = 0;
         let itemsWithPrice = [];
 
         for (const item of items) {
             const product = await Product.findById(item.product);
-            const price = product.offerPrice;
+            if (!product) continue;
 
+            const price = product.offerPrice;
             subtotal += price * item.quantity;
 
             itemsWithPrice.push({
@@ -2008,8 +2261,7 @@ export const placeOrderCOD = async (req, res) => {
         if (coupon) {
             if (coupon.toLowerCase() === "save10") {
                 discount = Math.floor(subtotal * 0.10);
-            }
-            else if (coupon.toLowerCase() === "off50") {
+            } else if (coupon.toLowerCase() === "off50") {
                 discount = 50;
             }
         }
@@ -2017,7 +2269,7 @@ export const placeOrderCOD = async (req, res) => {
         const amount = subtotal + deliveryCharge - discount;
 
         await Order.create({
-            userId,
+            userId,   // 🔥 FIXED HERE
             items: itemsWithPrice,
             subtotal,
             deliveryCharge,
@@ -2027,17 +2279,22 @@ export const placeOrderCOD = async (req, res) => {
             address,
             paymentType: "COD",
             status: "Order Placed",
-
-            location: req.body.location,   // 👈 THIS LINE
-
+            location: location || null
         });
 
-        return res.json({ success: true, message: "Order Placed Successfully" })
+        return res.json({
+            success: true,
+            message: "Order Placed Successfully"
+        });
 
     } catch (error) {
-        return res.json({ success: false, message: error.message });
+        console.log("ORDER ERROR:", error.message);
+        return res.json({
+            success: false,
+            message: error.message
+        });
     }
-}
+};
 
 
 // ==============================
@@ -2045,7 +2302,7 @@ export const placeOrderCOD = async (req, res) => {
 // ==============================
 export const getUserOrders = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId;
 
         const orders = await Order.find({
             userId,
@@ -2059,7 +2316,7 @@ export const getUserOrders = async (req, res) => {
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
-}
+};
 
 
 // ==============================
@@ -2095,11 +2352,11 @@ export const cancelOrder = async (req, res) => {
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
-}
+};
 
 
 // ==============================
-// SELLER ORDERS (ADMIN)
+// SELLER ORDERS
 // ==============================
 export const getAllOrders = async (req, res) => {
     try {
