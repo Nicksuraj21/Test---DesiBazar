@@ -2630,6 +2630,7 @@ const Cart = () => {
 
     // ✅ NEW STATE (ONLY ADDITION)
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+    const [isLocating, setIsLocating] = useState(false); // 👈 ADD THIS
 
     const cartAmount = getCartAmount();
     const deliveryCharge = cartAmount < 100 && cartAmount > 0 ? 40 : 0;
@@ -2694,11 +2695,32 @@ const Cart = () => {
     };
 
     /* ================= User se Location lo ================= */
+    // const getCurrentLocation = () => {
+    //     if (!navigator.geolocation) {
+    //         toast.error("Location not supported");
+    //         return;
+    //     }
+
+    //     navigator.geolocation.getCurrentPosition(
+    //         (position) => {
+    //             setUserLocation({
+    //                 lat: position.coords.latitude,
+    //                 lng: position.coords.longitude
+    //             });
+    //             toast.success("Location captured 📍");
+    //         },
+    //         () => {
+    //             toast.error("Location permission denied");
+    //         }
+    //     );
+    // };
     const getCurrentLocation = () => {
         if (!navigator.geolocation) {
             toast.error("Location not supported");
             return;
         }
+
+        setIsLocating(true); // 🔄 loader start
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -2706,13 +2728,17 @@ const Cart = () => {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 });
+
                 toast.success("Location captured 📍");
+                setIsLocating(false); // 🛑 loader stop
             },
             () => {
                 toast.error("Location permission denied");
+                setIsLocating(false); // 🛑 loader stop
             }
         );
     };
+
 
     /* ================= RAZORPAY UPI ================= */
     const handleUpiPayment = async () => {
@@ -2921,12 +2947,24 @@ const Cart = () => {
                         </button>
 
                         {/* LOCATION BUTTON */}
-                        <button
+                        {/* <button
                             onClick={getCurrentLocation}
                             className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition font-medium flex items-center gap-1"
                         >
-                            📍 Current Location
+                            📍 Share Location
+                        </button> */}
+                        <button
+                            onClick={getCurrentLocation}
+                            disabled={isLocating}
+                            className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition font-medium flex items-center gap-2 disabled:opacity-60"
+                        >
+                            {isLocating && (
+                                <span className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></span>
+                            )}
+
+                            {isLocating ? "Getting location..." : "📍 Share Current Location"}
                         </button>
+
                     </div>
                 </div>
 
