@@ -556,6 +556,124 @@
 
 
 
+// import React from "react";
+// import { assets } from "../assets/assets";
+// import { useAppContext } from "../context/AppContext";
+
+// const ProductCard = ({ product }) => {
+//   const { currency, addToCart, removeFromCart, cartItems, navigate } = useAppContext();
+
+//   return (
+//     product && (
+//       <div
+//         onClick={() => {
+//           navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
+//           scrollTo(0, 0);
+//         }}
+//         className="border border-gray-200 rounded-xl p-3 bg-white w-full 
+//         hover:shadow-md transition flex flex-col justify-between"
+//       >
+
+//         {/* IMAGE */}
+//         <div className="flex items-center justify-center h-[90px] mb-2 relative">
+//           <img
+//             className={`max-h-[75px] object-contain ${
+//               !product.inStock ? "opacity-50" : "hover:scale-105 transition"
+//             }`}
+//             src={product.image[0]}
+//             alt={product.name}
+//           />
+
+//           {!product.inStock && (
+//             <span className="absolute bg-red-500 text-white text-xs px-2 py-1 rounded">
+//               Out of Stock
+//             </span>
+//           )}
+//         </div>
+
+//         {/* INFO */}
+//         <div className="text-sm flex flex-col flex-grow">
+//           <p className="text-gray-400 text-xs">{product.category}</p>
+//           <p className="font-medium text-gray-800 truncate">{product.name}</p>
+
+//           <div className="flex items-center gap-1 mt-1">
+//             {Array(5).fill("").map((_, i) => (
+//               <img
+//                 key={i}
+//                 className="w-3"
+//                 src={i < 4 ? assets.star_icon : assets.star_dull_icon}
+//                 alt=""
+//               />
+//             ))}
+//           </div>
+
+//           {/* PRICE + CART */}
+//           <div className="flex items-center justify-between mt-3 gap-2 w-full">
+
+//             <p className="font-semibold text-primary text-sm whitespace-nowrap">
+//               {currency}{product.offerPrice}
+//               <span className="line-through text-gray-400 text-xs ml-1">
+//                 {currency}{product.price}
+//               </span>
+//             </p>
+
+//             <div onClick={(e) => e.stopPropagation()}>
+//               {!product.inStock ? (
+//                 <button
+//                   disabled
+//                   className="bg-gray-400 text-white text-xs px-2 py-[4px] rounded-md cursor-not-allowed"
+//                 >
+//                   Out
+//                 </button>
+//               ) : !cartItems[product._id] ? (
+//                 <button
+//                   onClick={() => addToCart(product._id)}
+//                   className="bg-primary text-white text-xs px-2 py-[4px] rounded-md"
+//                 >
+//                   Add
+//                 </button>
+//               ) : (
+//                 <div className="flex items-center bg-primary/15 rounded-md px-1 py-[2px] gap-1 min-w-[68px] justify-between">
+//                   <button onClick={() => removeFromCart(product._id)}>-</button>
+//                   <span className="text-xs">{cartItems[product._id]}</span>
+//                   <button onClick={() => addToCart(product._id)}>+</button>
+//                 </div>
+//               )}
+//             </div>
+
+//           </div>
+//         </div>
+//       </div>
+//     )
+//   );
+// };
+
+// export default ProductCard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React from "react";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
@@ -563,89 +681,136 @@ import { useAppContext } from "../context/AppContext";
 const ProductCard = ({ product }) => {
   const { currency, addToCart, removeFromCart, cartItems, navigate } = useAppContext();
 
+  if (!product) return null;
+
+  const qty = cartItems[product._id] || 0;
+  const discount = Math.round(
+    ((product.price - product.offerPrice) / product.price) * 100
+  );
+
   return (
-    product && (
-      <div
-        onClick={() => {
-          navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
-          scrollTo(0, 0);
-        }}
-        className="border border-gray-200 rounded-xl p-3 bg-white w-full 
-        hover:shadow-md transition flex flex-col justify-between"
-      >
+    <div
+      onClick={() => {
+        navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
+        scrollTo(0, 0);
+      }}
+      className="bg-white rounded-2xl border border-gray-200 
+      p-3 w-full hover:shadow-lg transition duration-200 
+      flex flex-col justify-between cursor-pointer group"
+    >
+      {/* IMAGE AREA */}
+      <div className="relative flex items-center justify-center h-[110px] mb-2">
 
-        {/* IMAGE */}
-        <div className="flex items-center justify-center h-[90px] mb-2 relative">
-          <img
-            className={`max-h-[75px] object-contain ${
-              !product.inStock ? "opacity-50" : "hover:scale-105 transition"
-            }`}
-            src={product.image[0]}
-            alt={product.name}
-          />
+        {/* discount badge */}
+        {discount > 0 && (
+          <span className="absolute top-0 left-0 bg-green-600 text-white 
+          text-[10px] px-2 py-[2px] rounded-br-md font-semibold">
+            {discount}% OFF
+          </span>
+        )}
 
-          {!product.inStock && (
-            <span className="absolute bg-red-500 text-white text-xs px-2 py-1 rounded">
+        {/* image */}
+        <img
+          src={product.image[0]}
+          alt={product.name}
+          className={`max-h-[90px] object-contain transition duration-200
+          ${product.inStock ? "group-hover:scale-105" : "opacity-40"}`}
+        />
+
+        {/* out of stock */}
+        {!product.inStock && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="bg-black/70 text-white text-xs px-3 py-1 rounded-md">
               Out of Stock
             </span>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
-        {/* INFO */}
-        <div className="text-sm flex flex-col flex-grow">
-          <p className="text-gray-400 text-xs">{product.category}</p>
-          <p className="font-medium text-gray-800 truncate">{product.name}</p>
+      {/* INFO */}
+      <div className="flex flex-col flex-grow text-sm">
+        <p className="text-gray-400 text-[8px] mb-[2px]">{product.category}</p>
 
-          <div className="flex items-center gap-1 mt-1">
-            {Array(5).fill("").map((_, i) => (
+       <p className="font-semibold text-gray-800 line-clamp-2 leading-[1.15] min-h-[22px]">
+          {product.name}
+        </p>
+
+        {/* rating */}
+        <div className="flex items-center gap-[2px] mt-[2px]">
+          {Array(5)
+            .fill("")
+            .map((_, i) => (
               <img
                 key={i}
-                className="w-3"
                 src={i < 4 ? assets.star_icon : assets.star_dull_icon}
-                alt=""
+                className="w-3"
               />
             ))}
-          </div>
+          <span className="text-[10px] text-gray-500 ml-1">(4)</span>
+        </div>
 
-          {/* PRICE + CART */}
-          <div className="flex items-center justify-between mt-3 gap-2 w-full">
+        {/* PRICE + CART */}
+        <div className="flex items-end justify-between mt-2">
 
-            <p className="font-semibold text-primary text-sm whitespace-nowrap">
-              {currency}{product.offerPrice}
-              <span className="line-through text-gray-400 text-xs ml-1">
-                {currency}{product.price}
-              </span>
+          {/* price */}
+          <div className="flex flex-col">
+            <p className="font-bold text-[15px] text-gray-900">
+              {currency}
+              {product.offerPrice}
             </p>
 
-            <div onClick={(e) => e.stopPropagation()}>
-              {!product.inStock ? (
+            <p className="text-gray-400 text-xs line-through">
+              {currency}
+              {product.price}
+            </p>
+          </div>
+
+          {/* CART BUTTON */}
+          <div onClick={(e) => e.stopPropagation()}>
+            {!product.inStock ? (
+              <button
+                disabled
+                className="bg-gray-300 text-gray-600 text-xs px-3 py-[5px] rounded-lg"
+              >
+                Out
+              </button>
+            ) : qty === 0 ? (
+              <button
+                onClick={() => addToCart(product._id)}
+                className="bg-primary text-white text-xs px-4 py-[6px] 
+                rounded-lg font-semibold shadow-sm active:scale-95"
+              >
+                ADD
+              </button>
+            ) : (
+              <div className="flex items-center bg-primary rounded-lg text-white 
+              px-2 py-[4px] gap-2 shadow-sm">
+
                 <button
-                  disabled
-                  className="bg-gray-400 text-white text-xs px-2 py-[4px] rounded-md cursor-not-allowed"
+                  onClick={() => removeFromCart(product._id)}
+                  className="text-lg px-1"
                 >
-                  Out
+                  −
                 </button>
-              ) : !cartItems[product._id] ? (
+
+                <span className="text-xs font-semibold w-4 text-center">
+                  {qty}
+                </span>
+
                 <button
                   onClick={() => addToCart(product._id)}
-                  className="bg-primary text-white text-xs px-2 py-[4px] rounded-md"
+                  className="text-lg px-1"
                 >
-                  Add
+                  +
                 </button>
-              ) : (
-                <div className="flex items-center bg-primary/15 rounded-md px-1 py-[2px] gap-1 min-w-[68px] justify-between">
-                  <button onClick={() => removeFromCart(product._id)}>-</button>
-                  <span className="text-xs">{cartItems[product._id]}</span>
-                  <button onClick={() => addToCart(product._id)}>+</button>
-                </div>
-              )}
-            </div>
-
+              </div>
+            )}
           </div>
         </div>
       </div>
-    )
+    </div>
   );
 };
 
 export default ProductCard;
+

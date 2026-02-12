@@ -72,6 +72,58 @@
 
 
 
+// import React from 'react'
+// import ProductCard from './ProductCard'
+// import { useAppContext } from '../context/AppContext';
+
+// const BestSeller = () => {
+//   const { products } = useAppContext();
+
+//   return (
+//     <div className='mt-16'>
+//       <p className='text-2xl md:text-3xl font-medium px-4'>Best Sellers</p>
+
+//       <div className="mt-6 px-4">
+//         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+
+//           {/* {products
+//             .slice(0, 5)
+//             .map((product) => (
+//               <ProductCard key={product._id} product={product} />
+//             ))} */}
+
+//           {products
+//             .filter(p => p.bestSeller)
+//             .map(product => (
+//               <ProductCard key={product._id} product={product} />
+//             ))}
+
+
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
+
+// export default BestSeller
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React from 'react'
 import ProductCard from './ProductCard'
 import { useAppContext } from '../context/AppContext';
@@ -83,23 +135,13 @@ const BestSeller = () => {
     <div className='mt-16'>
       <p className='text-2xl md:text-3xl font-medium px-4'>Best Sellers</p>
 
-      <div className="mt-6 px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-
-          {/* {products
-            .slice(0, 5)
-            .map((product) => (
-              <ProductCard key={product._id} product={product} />
-            ))} */}
-
-          {products
-            .filter(p => p.bestSeller)
-            .map(product => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-
-
-        </div>
+      {/* REMOVE px-4 wrapper */}
+      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 lg:grid-cols-5 mt-6'>
+        {products
+          .filter(p => p.bestSeller)
+          .map(product => (
+            <ProductCard key={product._id} product={product} />
+          ))}
       </div>
     </div>
   )

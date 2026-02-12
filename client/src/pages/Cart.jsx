@@ -2614,7 +2614,8 @@ const Cart = () => {
         getCartAmount,
         axios,
         user,
-        setCartItems
+        setCartItems,
+        setShowUserLogin   // 👈 ADD THIS
     } = useAppContext();
 
     const [cartArray, setCartArray] = useState([]);
@@ -2800,8 +2801,11 @@ const Cart = () => {
         if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
 
         if (!selectedAddress) {
-            return toast.error("Please select address");
+            return toast.error("Add Your Address", {
+                duration: 1200
+            });
         }
+
 
         setIsPlacingOrder(true); // 🔒 LOCK
 
@@ -2940,10 +2944,18 @@ const Cart = () => {
                     <div className="flex gap-2 mt-3">
                         {/* CHANGE BUTTON */}
                         <button
-                            onClick={() => setShowAddress(!showAddress)}
+                            onClick={() => {
+                                if (!user) {
+                                    toast.error("Please login first");
+                                    setShowUserLogin(true);
+                                    return;
+                                }
+                                setShowAddress(!showAddress);
+                            }}
+
                             className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium"
                         >
-                            Change
+                            Add/Change
                         </button>
 
                         {/* LOCATION BUTTON */}
