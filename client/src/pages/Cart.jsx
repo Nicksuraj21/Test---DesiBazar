@@ -2800,11 +2800,12 @@ const Cart = () => {
     const placeOrder = async () => {
         if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
 
-        if (!selectedAddress) {
-            return toast.error("Add Your Address", {
-                duration: 1200
-            });
+        if (!user) {
+            toast.error("Please login first");
+            setShowUserLogin(true);
+            return;
         }
+
 
 
         setIsPlacingOrder(true); // 🔒 LOCK
@@ -2917,19 +2918,7 @@ const Cart = () => {
                 <h2 className="text-lg font-medium mb-4">Order Summary</h2>
 
 
-                {/* 
-                <p className="text-xs text-gray-400 uppercase">Delivery Address</p>
-                <p className="text-gray-600 text-sm mt-1">
-                    {selectedAddress ? `${selectedAddress.street}, ${selectedAddress.city}` : "No address"}
-                </p>
 
-                <button onClick={() => setShowAddress(!showAddress)} className="text-primary text-xs mt-1">
-                    Change
-                </button>
-
-                <button onClick={getCurrentLocation} className="text-primary text-xs mt-1 block">
-                    📍 Use my current location
-                </button> */}
 
 
                 <p className="text-xs text-gray-400 uppercase">Delivery Address</p>
@@ -2958,13 +2947,7 @@ const Cart = () => {
                             Add/Change
                         </button>
 
-                        {/* LOCATION BUTTON */}
-                        {/* <button
-                            onClick={getCurrentLocation}
-                            className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition font-medium flex items-center gap-1"
-                        >
-                            📍 Share Location
-                        </button> */}
+
                         <button
                             onClick={getCurrentLocation}
                             disabled={isLocating}
@@ -3005,9 +2988,7 @@ const Cart = () => {
                                 {a.street}, {a.city}
                             </p>
                         ))}
-                        {/* <p onClick={() => navigate("/add-address")} className="p-2 text-primary text-sm cursor-pointer">
-                            Add address
-                        </p> */}
+                        \
                         <button
                             onClick={() => navigate("/add-address")}
                             className="w-full text-left px-3 py-2 text-sm text-primary bg-primary/9 hover:bg-primary/14 rounded-md transition font-medium"
