@@ -2797,48 +2797,53 @@ const Cart = () => {
     };
 
     /* ================= PLACE ORDER COD ================= */
-    const placeOrder = async () => {
-        if (isPlacingOrder) return; // 🛑 DOUBLE CLICK BLOCK
+   const placeOrder = async () => {
+    if (isPlacingOrder) return;
 
-        if (!user) {
-            toast.error("Please login first");
-            setShowUserLogin(true);
-            return;
-        }
+    if (!user) {
+        toast.error("Please login first");
+        setShowUserLogin(true);
+        return;
+    }
 
+    if (!selectedAddress) {
+        toast.error("Please add address first");
+        navigate("/add-address");
+        return;
+    }
 
+    setIsPlacingOrder(true);
 
-        setIsPlacingOrder(true); // 🔒 LOCK
+    try {
+        if (paymentOption === "COD") {
+            const { data } = await axios.post("/api/order/cod", {
+                userId: user._id,
+                items: cartArray.map(item => ({
+                    product: item._id,
+                    quantity: item.quantity
+                })),
+                address: selectedAddress._id,
+                coupon,
+                location: userLocation || null
+            });
 
-        try {
-            if (paymentOption === "COD") {
-                const { data } = await axios.post("/api/order/cod", {
-                    userId: user._id,
-                    items: cartArray.map(item => ({
-                        product: item._id,
-                        quantity: item.quantity
-                    })),
-                    address: selectedAddress._id,
-                    coupon,
-                    location: userLocation || null   // ✅ CHANGE
-                });
-
-                if (data.success) {
-                    toast.success(data.message);
-                    setCartItems({});
-                    navigate("/my-orders");
-                } else {
-                    toast.error(data.message);
-                }
+            if (data.success) {
+                toast.success(data.message);
+                setCartItems({});
+                navigate("/my-orders");
             } else {
-                await handleUpiPayment();
+                toast.error(data.message);
             }
-        } catch (error) {
-            toast.error(error.message);
-        } finally {
-            setIsPlacingOrder(false); // 🔓 UNLOCK
+        } else {
+            await handleUpiPayment();
         }
-    };
+    } catch (error) {
+        toast.error(error.message);
+    } finally {
+        setIsPlacingOrder(false);
+    }
+};
+
 
     useEffect(() => {
         if (products.length > 0) getCart();

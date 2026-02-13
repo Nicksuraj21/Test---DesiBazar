@@ -756,6 +756,7 @@ export const AppContextProvider = ({ children }) => {
         user,
         setUser,
         isSeller,
+        setIsSeller,   // 🔥 YE ADD KARO
         sellerLoading,
         showUserLogin,
         setShowUserLogin,
