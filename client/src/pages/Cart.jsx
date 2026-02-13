@@ -2988,7 +2988,7 @@ const Cart = () => {
                                 {a.street}, {a.city}
                             </p>
                         ))}
-                        \
+                        
                         <button
                             onClick={() => navigate("/add-address")}
                             className="w-full text-left px-3 py-2 text-sm text-primary bg-primary/9 hover:bg-primary/14 rounded-md transition font-medium"
