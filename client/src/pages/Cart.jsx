@@ -2743,20 +2743,45 @@ const Cart = () => {
 
     /* ================= RAZORPAY UPI ================= */
     const handleUpiPayment = async () => {
+
+        if (!user) {
+            toast.error("Please login first");
+            setShowUserLogin(true);
+            return;
+        }
+
+        if (!selectedAddress) {
+            toast.error("Add address first");
+            navigate("/add-address");
+            return;
+        }
+
         try {
-            const { data } = await axios.post("/api/payment/create-upi-order", {
-                userId: user._id,
-                items: cartArray.map(item => ({
-                    product: item._id,
-                    quantity: item.quantity
-                })),
-                address: selectedAddress._id,
-                coupon,
-                location: userLocation || null   // ✅ CHANGE
-            });
 
-            if (!data.success) return toast.error(data.message);
+            // 🔥 CREATE ORDER (UPI)
+            const { data } = await axios.post(
+                "/api/payment/create-upi-order",
+                {
+                    userId: user._id,   // 👈 IMPORTANT
+                    items: cartArray.map(item => ({
+                        product: item._id,
+                        quantity: item.quantity
+                    })),
+                    address: selectedAddress._id,
+                    coupon,
+                    location: userLocation || null
+                },
+                {
+                    withCredentials: true   // 👈 COOKIE FIX
+                }
+            );
 
+            if (!data.success) {
+                toast.error(data.message);
+                return;
+            }
+
+            // 🔥 RAZORPAY POPUP
             const options = {
                 key: import.meta.env.VITE_RAZORPAY_KEY_ID,
                 order_id: data.razorpayOrder.id,
@@ -2770,79 +2795,97 @@ const Cart = () => {
                     netbanking: false,
                     wallet: false
                 },
-                handler: async function (response) {
-                    const verify = await axios.post("/api/payment/verify-upi", {
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_signature: response.razorpay_signature,
-                        orderId: data.orderId
-                    });
 
-                    if (verify.data.success) {
-                        toast.success("Payment Successful 🎉");
-                        setCartItems({});
-                        navigate("/my-orders");
-                    } else {
-                        toast.error("Payment failed");
+                handler: async function (response) {
+
+                    try {
+
+                        const verify = await axios.post(
+                            "/api/payment/verify-upi",
+                            {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderId: data.orderId
+                            },
+                            {
+                                withCredentials: true   // 👈 COOKIE FIX AGAIN
+                            }
+                        );
+
+                        if (verify.data.success) {
+                            toast.success("Payment Successful 🎉");
+                            setCartItems({});
+                            navigate("/my-orders");
+                        } else {
+                            toast.error("Payment verification failed");
+                        }
+
+                    } catch (err) {
+                        toast.error("Payment verify error");
                     }
                 },
+
                 theme: { color: "#16a34a" }
             };
 
             const rzp = new window.Razorpay(options);
             rzp.open();
+
         } catch (error) {
-            toast.error(error.message);
+            console.log(error);
+            toast.error("UPI failed");
         }
     };
 
+
     /* ================= PLACE ORDER COD ================= */
-   const placeOrder = async () => {
-    if (isPlacingOrder) return;
+    const placeOrder = async () => {
+        if (isPlacingOrder) return;
 
-    if (!user) {
-        toast.error("Please login first");
-        setShowUserLogin(true);
-        return;
-    }
-
-    if (!selectedAddress) {
-        toast.error("Please add address first");
-        navigate("/add-address");
-        return;
-    }
-
-    setIsPlacingOrder(true);
-
-    try {
-        if (paymentOption === "COD") {
-            const { data } = await axios.post("/api/order/cod", {
-                userId: user._id,
-                items: cartArray.map(item => ({
-                    product: item._id,
-                    quantity: item.quantity
-                })),
-                address: selectedAddress._id,
-                coupon,
-                location: userLocation || null
-            });
-
-            if (data.success) {
-                toast.success(data.message);
-                setCartItems({});
-                navigate("/my-orders");
-            } else {
-                toast.error(data.message);
-            }
-        } else {
-            await handleUpiPayment();
+        if (!user) {
+            toast.error("Please login first");
+            setShowUserLogin(true);
+            return;
         }
-    } catch (error) {
-        toast.error(error.message);
-    } finally {
-        setIsPlacingOrder(false);
-    }
-};
+
+        if (!selectedAddress) {
+            toast.error("Please add address first");
+            navigate("/add-address");
+            return;
+        }
+
+        setIsPlacingOrder(true);
+
+        try {
+            if (paymentOption === "COD") {
+                const { data } = await axios.post("/api/order/cod", {
+                    userId: user._id,
+                    items: cartArray.map(item => ({
+                        product: item._id,
+                        quantity: item.quantity
+                    })),
+                    address: selectedAddress._id,
+                    coupon,
+                    location: userLocation || null
+                });
+
+                if (data.success) {
+                    toast.success(data.message);
+                    setCartItems({});
+                    navigate("/my-orders");
+                } else {
+                    toast.error(data.message);
+                }
+            } else {
+                await handleUpiPayment();
+            }
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            setIsPlacingOrder(false);
+        }
+    };
 
 
     useEffect(() => {
@@ -2993,7 +3036,7 @@ const Cart = () => {
                                 {a.street}, {a.city}
                             </p>
                         ))}
-                        
+
                         <button
                             onClick={() => navigate("/add-address")}
                             className="w-full text-left px-3 py-2 text-sm text-primary bg-primary/9 hover:bg-primary/14 rounded-md transition font-medium"
