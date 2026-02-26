@@ -199,6 +199,7 @@ import AddProduct from './pages/seller/AddProduct';
 import ProductList from './pages/seller/ProductList';
 import Orders from './pages/seller/Orders';
 import Loading from './components/Loading';
+import ScrollToTop from './components/ScrollToTop';
 
 const App = () => {
 
@@ -223,6 +224,9 @@ const App = () => {
       <Toaster />
 
       <div className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"}`}>
+
+         <ScrollToTop />   {/* 🔥 ADDED */}
+
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/products' element={<AllProducts />} />
