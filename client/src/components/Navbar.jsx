@@ -1055,7 +1055,7 @@ const Navbar = () => {
           </NavLink>
 
           <a
-            href="https://wa.me/919065735692?text=Hi%20I%20want%20to%20contact%20you"
+            href="https://wa.me/918228950308?text=Hi%20DesiBazar%20team,%20I%20want%20to%20order.%20Please%20share%20details."
             target="_blank"
             rel="noopener noreferrer"
           >
