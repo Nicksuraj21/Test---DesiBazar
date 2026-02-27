@@ -2016,23 +2016,33 @@ const MyOrders = () => {
 
                         {/* ITEMS */}
                         <div className="space-y-3">
-                            {order.items.map((item, i) => (
-                                <div key={i} className="flex items-center gap-3">
-                                    <div className="bg-primary/10 p-2 rounded-lg">
-                                        <img src={item.product.image[0]} className="w-12 h-12" />
-                                    </div>
+                            {(order.items || []).map((item, i) => {
 
-                                    <div className="flex-1 flex justify-between items-center">
-                                        <p className="font-medium text-sm">
-                                            {item.product.name} × {item.quantity}
-                                        </p>
+                                const product = item.product
 
-                                        <p className="font-semibold text-gray-700">
-                                            {currency}{item.price * item.quantity}
-                                        </p>
+                                return (
+                                    <div key={i} className="flex items-center gap-3">
+
+                                        <div className="bg-primary/10 p-2 rounded-lg">
+                                            <img
+                                                src={product?.image?.[0] || "/placeholder.png"}
+                                                className="w-12 h-12"
+                                            />
+                                        </div>
+
+                                        <div className="flex-1 flex justify-between items-center">
+                                            <p className="font-medium text-sm">
+                                                {product?.name || "Deleted Product"} × {item.quantity}
+                                            </p>
+
+                                            <p className="font-semibold text-gray-700">
+                                                {currency}{item.price * item.quantity}
+                                            </p>
+                                        </div>
+
                                     </div>
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
 
                         {/* CHARGES */}

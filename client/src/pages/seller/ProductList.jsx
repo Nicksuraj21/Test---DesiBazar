@@ -529,14 +529,151 @@
 
 
 
+// import React from 'react'
+// import { useAppContext } from '../../context/AppContext'
+// import toast from 'react-hot-toast'
+
+// const ProductList = () => {
+
+//     const {products, currency, axios, fetchProducts} = useAppContext()
+
+//     const updatePrice = async (id, price, offerPrice)=>{
+//         try {
+//             const { data } = await axios.post('/api/product/update-price', {
+//                 id,
+//                 price,
+//                 offerPrice
+//             });
+//             if(data.success){
+//                 fetchProducts();
+//             }
+//         } catch (error) {
+//             toast.error(error.message)
+//         }
+//     }
+
+//     const toggleBest = async (id, bestSeller)=>{
+//       try {
+//         const {data} = await axios.post('/api/product/best-seller',{id,bestSeller})
+//         if(data.success){
+//           fetchProducts()
+//         }
+//       } catch (error) {
+//         toast.error(error.message)
+//       }
+//     }
+
+//   return (
+//     <div className="flex-1 h-[95vh] overflow-y-scroll">
+//         <div className="w-full md:p-10 p-4">
+
+//             <h2 className="pb-4 text-lg font-medium">All Products</h2>
+
+//             <table className="w-full border">
+//                 <thead>
+//                     <tr className="border-b">
+//                         <th>Product</th>
+//                         <th>Category</th>
+//                         <th>MRP</th>
+//                         <th>Offer</th>
+//                         <th>Best</th>
+//                         <th>Stock</th>
+//                     </tr>
+//                 </thead>
+
+//                 <tbody>
+//                     {products.map((product)=>(
+//                         <tr key={product._id} className="border-b text-center">
+
+//                             <td className="flex items-center gap-3 p-2">
+//                                 <img src={product.image[0]} className="w-12"/>
+//                                 {product.name}
+//                             </td>
+
+//                             <td>{product.category}</td>
+
+//                             <td>
+//                                 <input
+//                                   type="number"
+//                                   defaultValue={product.price}
+//                                   onBlur={(e)=> updatePrice(product._id, e.target.value, product.offerPrice)}
+//                                   className="border w-20 px-1"
+//                                 />
+//                             </td>
+
+//                             <td>
+//                                 <input
+//                                   type="number"
+//                                   defaultValue={product.offerPrice}
+//                                   onBlur={(e)=> updatePrice(product._id, product.price, e.target.value)}
+//                                   className="border w-20 px-1"
+//                                 />
+//                             </td>
+
+//                             {/* BEST SELLER */}
+//                             <td>
+//                               <input
+//                                 type="checkbox"
+//                                 checked={product.bestSeller}
+//                                 onChange={()=>toggleBest(product._id, !product.bestSeller)}
+//                               />
+//                             </td>
+
+//                             <td>
+//                                 <input
+//                                   type="checkbox"
+//                                   checked={product.inStock}
+//                                   onChange={()=>toggleStock(product._id, !product.inStock)}
+//                                 />
+//                             </td>
+
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+
+//         </div>
+//     </div>
+//   )
+// }
+
+// export default ProductList
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React from 'react'
 import { useAppContext } from '../../context/AppContext'
 import toast from 'react-hot-toast'
+import { Trash2 } from 'lucide-react'
 
 const ProductList = () => {
 
     const {products, currency, axios, fetchProducts} = useAppContext()
 
+    // UPDATE PRICE
     const updatePrice = async (id, price, offerPrice)=>{
         try {
             const { data } = await axios.post('/api/product/update-price', {
@@ -545,6 +682,7 @@ const ProductList = () => {
                 offerPrice
             });
             if(data.success){
+                toast.success("Price Updated")
                 fetchProducts();
             }
         } catch (error) {
@@ -552,10 +690,38 @@ const ProductList = () => {
         }
     }
 
+    // BEST SELLER
     const toggleBest = async (id, bestSeller)=>{
       try {
         const {data} = await axios.post('/api/product/best-seller',{id,bestSeller})
         if(data.success){
+          fetchProducts()
+        }
+      } catch (error) {
+        toast.error(error.message)
+      }
+    }
+
+    // STOCK
+    const toggleStock = async (id, inStock)=>{
+      try {
+        const {data} = await axios.post('/api/product/stock',{id,inStock})
+        if(data.success){
+          fetchProducts()
+        }
+      } catch (error) {
+        toast.error(error.message)
+      }
+    }
+
+    // DELETE PRODUCT
+    const deleteProduct = async (id)=>{
+      if(!window.confirm("Are you sure you want to delete this product?")) return
+
+      try {
+        const {data} = await axios.post('/api/product/delete',{id})
+        if(data.success){
+          toast.success("Product Deleted")
           fetchProducts()
         }
       } catch (error) {
@@ -578,6 +744,7 @@ const ProductList = () => {
                         <th>Offer</th>
                         <th>Best</th>
                         <th>Stock</th>
+                        <th>Delete</th>
                     </tr>
                 </thead>
 
@@ -610,7 +777,6 @@ const ProductList = () => {
                                 />
                             </td>
 
-                            {/* BEST SELLER */}
                             <td>
                               <input
                                 type="checkbox"
@@ -625,6 +791,16 @@ const ProductList = () => {
                                   checked={product.inStock}
                                   onChange={()=>toggleStock(product._id, !product.inStock)}
                                 />
+                            </td>
+
+                            {/* DELETE ICON */}
+                            <td>
+                                <button
+                                  onClick={()=>deleteProduct(product._id)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Trash2 size={18}/>
+                                </button>
                             </td>
 
                         </tr>

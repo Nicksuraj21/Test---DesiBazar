@@ -746,7 +746,7 @@ const ProductCard = ({ product }) => {
                 className="w-3"
               />
             ))}
-          <span className="text-[10px] text-gray-500 ml-1">(4)</span>
+          <span className="text-[10px] text-gray-500 ml-1"></span>
         </div>
 
         {/* PRICE + CART */}

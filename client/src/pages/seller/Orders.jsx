@@ -1978,7 +1978,7 @@ const Orders = () => {
 
         // 🔔 NEW ORDER SOUND
         if (lastCount && allOrders.length > lastCount) {
-          audioRef.current?.play().catch(()=>{})
+          audioRef.current?.play().catch(() => { })
           toast.success("🛒 New order received")
         }
 
@@ -1999,9 +1999,9 @@ const Orders = () => {
     return () => clearInterval(interval)
   }, [])
 
-useEffect(() => {
-  calculateStats(orders, filter)
-}, [filter, orders])
+  useEffect(() => {
+    calculateStats(orders, filter)
+  }, [filter, orders])
 
 
   // =========================
@@ -2060,18 +2060,18 @@ useEffect(() => {
 
         {/* FILTER */}
         <div className="flex gap-2">
-          <button onClick={()=>setFilter("today")}
-            className={`px-4 py-1 rounded ${filter==="today" ? "bg-primary text-white":"bg-gray-200"}`}>
+          <button onClick={() => setFilter("today")}
+            className={`px-4 py-1 rounded ${filter === "today" ? "bg-primary text-white" : "bg-gray-200"}`}>
             Today
           </button>
 
-          <button onClick={()=>setFilter("yesterday")}
-            className={`px-4 py-1 rounded ${filter==="yesterday" ? "bg-primary text-white":"bg-gray-200"}`}>
+          <button onClick={() => setFilter("yesterday")}
+            className={`px-4 py-1 rounded ${filter === "yesterday" ? "bg-primary text-white" : "bg-gray-200"}`}>
             Yesterday
           </button>
 
-          <button onClick={()=>setFilter("lifetime")}
-            className={`px-4 py-1 rounded ${filter==="lifetime" ? "bg-primary text-white":"bg-gray-200"}`}>
+          <button onClick={() => setFilter("lifetime")}
+            className={`px-4 py-1 rounded ${filter === "lifetime" ? "bg-primary text-white" : "bg-gray-200"}`}>
             Lifetime
           </button>
         </div>
@@ -2123,9 +2123,9 @@ useEffect(() => {
                 <img className="w-12 h-12" src={assets.box_icon} />
 
                 <div>
-                  {order.items.map((item, index) => (
+                  {(order.items || []).map((item, index) => (
                     <p key={index} className="font-medium">
-                      {item.product.name}
+                      {item.product?.name || "Deleted Product"}
                       <span className="text-primary"> x {item.quantity}</span>
                     </p>
                   ))}
