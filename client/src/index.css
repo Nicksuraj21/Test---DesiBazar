@@ -14,3 +14,15 @@
 .no-scrollbar::-webkit-scrollbar{
   display: none;
 }
+
+
+
+
+
+/* ========================= */
+/* FORCE LIGHT MODE LOCK */
+/* ========================= */
+
+:root {
+  color-scheme: light;
+}
