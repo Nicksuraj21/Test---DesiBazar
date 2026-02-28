@@ -2928,16 +2928,40 @@ const Cart = () => {
                                 <p className="font-medium text-gray-700">{product.name}</p>
                                 <p className="text-sm text-gray-400">Weight: {product.weight || "N/A"}</p>
                                 <div className="flex items-center mt-1">
-                                    <p className="text-sm">Qty:</p>
-                                    <select
-                                        value={product.quantity}
-                                        onChange={e => updateCartItem(product._id, Number(e.target.value))}
-                                        className="ml-2 text-sm border border-gray-200 rounded px-1 outline-none"
-                                    >
-                                        {Array(10).fill("").map((_, i) => (
-                                            <option key={i} value={i + 1}>{i + 1}</option>
-                                        ))}
-                                    </select>
+                                    <p className="text-sm"></p>
+                                    <div className="flex items-center gap-2 mt-1">
+
+                                        <p className="text-sm">Qty:</p>
+
+                                        <div className="flex items-center border border-gray-200 rounded-md overflow-hidden">
+
+                                            <button
+                                                onClick={() =>
+                                                    product.quantity > 1 &&
+                                                    updateCartItem(product._id, product.quantity - 1)
+                                                }
+                                                className="px-2 py-0.5 text-sm bg-gray-100 hover:bg-gray-200"
+                                            >
+                                                −
+                                            </button>
+
+                                            <div className="px-3 py-0.5 text-sm font-medium bg-white min-w-[28px] text-center">
+                                                {product.quantity}
+                                            </div>
+
+                                            <button
+                                                onClick={() =>
+                                                    product.quantity < 5 &&
+                                                    updateCartItem(product._id, product.quantity + 1)
+                                                }
+                                                className="px-2 py-0.5 text-sm bg-gray-100 hover:bg-gray-200"
+                                            >
+                                                +
+                                            </button>
+
+                                        </div>
+
+                                    </div>
                                 </div>
                             </div>
                         </div>
