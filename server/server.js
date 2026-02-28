@@ -323,7 +323,9 @@ await connectCloudinary();
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://test-desibazar-frontend.onrender.com'
+  'https://test-desibazar-frontend.onrender.com',
+  'https://desibazar.online',
+  'https://www.desibazar.online'
 ];
 
 
