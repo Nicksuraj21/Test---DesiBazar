@@ -1859,6 +1859,9 @@ const MyOrders = () => {
     const [myOrders, setMyOrders] = useState([])
     const [tick, setTick] = useState(0)
     const { currency, axios, user } = useAppContext()
+    
+    // *****for see all button setExpandedOrders ****
+    const [expandedOrders, setExpandedOrders] = useState({})
 
     const fetchMyOrders = async () => {
         try {
@@ -2015,7 +2018,10 @@ const MyOrders = () => {
 
                         {/* ITEMS */}
                         <div className="space-y-3">
-                            {(order.items || []).map((item, i) => {
+                            {((expandedOrders[order._id]
+                                ? order.items
+                                : order.items?.slice(0, 3)) || []
+                            ).map((item, i) => {
 
                                 const product = item.product
 
@@ -2043,6 +2049,26 @@ const MyOrders = () => {
                                 )
                             })}
                         </div>
+
+                        {/* ***** See all button****** */}
+                        {order.items?.length > 3 && (
+                            <div className="text-left mt-2">
+                                <button
+                                    onClick={() =>
+                                        setExpandedOrders(prev => ({
+                                            ...prev,
+                                            [order._id]: !prev[order._id]
+                                        }))
+                                    }
+                                    className="text-primary text-sm font-medium hover:underline"
+                                >
+                                    {expandedOrders[order._id]
+                                        ? "Show Less ▲"
+                                        : `See All (${order.items.length}) ▼`}
+                                </button>
+                            </div>
+                        )}
+
 
                         {/* CHARGES */}
                         <div className="mt-5 border-t pt-4 space-y-1 text-sm">
