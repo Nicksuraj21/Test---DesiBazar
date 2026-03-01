@@ -1977,7 +1977,6 @@ const MyOrders = () => {
                 const effectiveStatus = getEffectiveStatus(order)
 
                 const canCancel =
-                    order.paymentType === "COD" &&
                     effectiveStatus === "Order Placed" &&
                     now - created <= CANCEL_WINDOW
 
@@ -2091,6 +2090,80 @@ const MyOrders = () => {
                                         : `Arriving in ${getDeliveryTimeText(order)} ⚡`}
                                 </p>
                             )}
+
+
+
+                            {/* Refund Progress */}
+                            {(order.paymentStatus === "Refund Initiated" ||
+                                order.paymentStatus === "Refunded") && (
+
+                                    <div className="mt-4 w-full md:w-1/2 mx-auto pb-6">
+
+                                        <div className="relative">
+
+                                            {/* Base Line (Slim) */}
+                                            <div className="h-[3px] bg-gray-300 rounded-full"></div>
+
+                                            {/* Progress Line */}
+                                            <div
+                                                className={`h-[3px] bg-green-500 rounded-full absolute top-0 left-0 transition-all duration-500
+        ${order.paymentStatus === "Refund Initiated"
+                                                        ? "w-1/2"   // Half
+                                                        : "w-full"  // Full
+                                                    }`}
+                                            ></div>
+
+                                            {/* Circles */}
+                                            <div className="absolute -top-[8px] left-0 w-full flex justify-between">
+
+                                                {/* Step 1 */}
+                                                <div className="flex flex-col items-center">
+                                                    <div
+                                                        className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px]
+            ${order.paymentStatus === "Refund Initiated" ||
+                                                                order.paymentStatus === "Refunded"
+                                                                ? "bg-green-500"
+                                                                : "bg-gray-400"
+                                                            }`}
+                                                    >
+                                                        {(order.paymentStatus === "Refund Initiated" ||
+                                                            order.paymentStatus === "Refunded") && "✓"}
+                                                    </div>
+                                                    <span className="text-[10px] mt-2 text-gray-600">
+                                                        Initiated
+                                                    </span>
+                                                </div>
+
+                                                {/* Step 2 */}
+                                                <div className="flex flex-col items-center">
+                                                    <div
+                                                        className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px]
+            ${order.paymentStatus === "Refunded"
+                                                                ? "bg-green-600"
+                                                                : "bg-gray-400"
+                                                            }`}
+                                                    >
+                                                        {order.paymentStatus === "Refunded" && "✓"}
+                                                    </div>
+                                                    <span className="text-[10px] mt-2 text-gray-600">
+                                                        Refunded
+                                                    </span>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                )}
+
+
+
+
+
+
+
+
 
                             {/* CANCEL BUTTON */}
                             {canCancel && (

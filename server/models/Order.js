@@ -133,10 +133,20 @@ const orderSchema = new mongoose.Schema({
 
     paymentStatus: {
         type: String,
-        enum: ['Pending', 'Paid', 'Failed'],
+        enum: [
+            'Pending',
+            'Paid',
+            'Failed',
+            'Refund Initiated',
+            'Refunded'
+        ],
         default: 'Pending'
     },
-    
+
+    refundId: {
+        type: String
+    },
+
     location: {
         lat: Number,
         lng: Number

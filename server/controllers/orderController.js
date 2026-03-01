@@ -2177,6 +2177,7 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import razorpay from "../configs/razorpay.js";
 
 
 // ==============================
@@ -2325,35 +2326,73 @@ export const getUserOrders = async (req, res) => {
 export const cancelOrder = async (req, res) => {
     try {
         const { orderId } = req.body;
+        const userId = req.userId;
 
         const order = await Order.findById(orderId);
-        if (!order) return res.json({ success: false, message: "Order not found" });
 
-        if (order.paymentType !== "COD") {
-            return res.json({ success: false, message: "Only COD cancel allowed" });
+        if (!order)
+            return res.json({ success: false, message: "Order not found" });
+
+        // Security check
+        if (order.userId.toString() !== userId.toString()) {
+            return res.json({ success: false, message: "Unauthorized" });
         }
 
-        if (order.status !== "Order Placed") {
-            return res.json({ success: false, message: "Cannot cancel" });
-        }
+        if (order.status !== "Order Placed")
+            return res.json({ success: false, message: "Cannot cancel now" });
 
         const created = new Date(order.createdAt).getTime();
-        const now = Date.now();
 
-        if (now - created > 2 * 60 * 1000) {
-            return res.json({ success: false, message: "Cancel time expired" });
+        if (Date.now() - created > 2 * 60 * 1000)
+            return res.json({ success: false, message: "Cancel window expired" });
+
+        // ======================
+        // COD ORDER
+        // ======================
+        if (order.paymentType === "COD") {
+            order.status = "Cancelled";
+            await order.save();
+
+            return res.json({
+                success: true,
+                message: "Order cancelled"
+            });
         }
 
+        // ======================
+        // UPI / ONLINE PAYMENT
+        // ======================
+
+        if (!order.razorpayPaymentId)
+            return res.json({
+                success: false,
+                message: "Payment not found for refund"
+            });
+
+        // 🔥 Trigger Razorpay Refund
+        const refund = await razorpay.payments.refund(
+            order.razorpayPaymentId
+        );
+
         order.status = "Cancelled";
+        order.paymentStatus = "Refund Initiated";
+        order.refundId = refund.id;
+
         await order.save();
 
-        res.json({ success: true, message: "Order cancelled" });
+        return res.json({
+            success: true,
+            message: "Refund initiated"
+        });
 
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        console.log("Cancel error:", error);
+        return res.json({
+            success: false,
+            message: error.message
+        });
     }
 };
-
 
 // ==============================
 // SELLER ORDERS
@@ -2381,7 +2420,64 @@ export const updateOrderStatus = async (req, res) => {
     try {
         const { orderId, status } = req.body;
 
-        await Order.findByIdAndUpdate(orderId, { status });
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.json({
+                success: false,
+                message: "Order not found"
+            });
+        }
+
+        // =========================
+        // IF SELLER CANCELS ORDER
+        // =========================
+        if (status === "Cancelled" || status === "Canceled") {
+
+            // COD ORDER
+            if (order.paymentType === "COD") {
+                order.status = "Cancelled";
+                await order.save();
+
+                return res.json({
+                    success: true,
+                    message: "Order cancelled"
+                });
+            }
+
+            // ONLINE / UPI ORDER
+            if (order.paymentType !== "COD") {
+
+                if (!order.razorpayPaymentId) {
+                    return res.json({
+                        success: false,
+                        message: "Payment ID missing"
+                    });
+                }
+
+                // 🔥 Trigger Razorpay Refund
+                const refund = await razorpay.payments.refund(
+                    order.razorpayPaymentId
+                );
+
+                order.status = "Cancelled";
+                order.paymentStatus = "Refund Initiated";
+                order.refundId = refund.id;
+
+                await order.save();
+
+                return res.json({
+                    success: true,
+                    message: "Refund initiated"
+                });
+            }
+        }
+
+        // =========================
+        // NORMAL STATUS UPDATE
+        // =========================
+        order.status = status;
+        await order.save();
 
         res.json({
             success: true,
@@ -2389,6 +2485,7 @@ export const updateOrderStatus = async (req, res) => {
         });
 
     } catch (error) {
+        console.log("Status update error:", error);
         res.json({
             success: false,
             message: error.message

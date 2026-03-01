@@ -1899,6 +1899,7 @@ const Orders = () => {
 
   const [orders, setOrders] = useState([])
   const [lastCount, setLastCount] = useState(0)
+  
   const [filter, setFilter] = useState("today")
 
   const audioRef = useRef(null)
@@ -2160,7 +2161,11 @@ const Orders = () => {
               <select
                 value={order.status}
                 onChange={(e) => changeStatus(order._id, e.target.value)}
-                className="border px-2 py-1 rounded text-sm"
+                disabled={order.status === "Cancelled" || order.status === "Canceled"}
+                className={`border px-2 py-1 rounded text-sm 
+                ${(order.status === "Cancelled" || order.status === "Canceled")
+                    ? "bg-gray-200 cursor-not-allowed"
+                    : ""}`}
               >
                 <option>Order Placed</option>
                 <option>Packed</option>
