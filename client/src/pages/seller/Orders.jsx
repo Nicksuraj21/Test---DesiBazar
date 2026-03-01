@@ -1899,7 +1899,7 @@ const Orders = () => {
 
   const [orders, setOrders] = useState([])
   const [lastCount, setLastCount] = useState(0)
-  
+
   const [filter, setFilter] = useState("today")
 
   const audioRef = useRef(null)
@@ -2175,7 +2175,11 @@ const Orders = () => {
               </select>
 
               <p className="text-xs text-gray-500">
-                {order.paymentType} • {order.isPaid ? "Paid" : "COD"}
+                {order.paymentType} • {
+                  order.paymentType === "COD"
+                    ? "Pay on Delivery"
+                    : order.paymentStatus
+                }
               </p>
 
               {order.location?.lat && order.location?.lng && (
