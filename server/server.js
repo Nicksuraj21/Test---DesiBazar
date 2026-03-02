@@ -479,6 +479,8 @@ import Order from "./models/Order.js";
 const app = express();
 const port = process.env.PORT || 4000;
 
+app.set("trust proxy", 1);   // ✅ ADD THIS
+
 await connectDB();
 await connectCloudinary();
 
@@ -550,7 +552,7 @@ app.post(
 // ==============================
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: true,
     credentials: true,
   })
 );

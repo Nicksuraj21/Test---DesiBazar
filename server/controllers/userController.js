@@ -511,6 +511,359 @@
 
 
 
+// import User from "../models/User.js";
+// import bcrypt from "bcryptjs";
+// import jwt from "jsonwebtoken";
+// import { OAuth2Client } from "google-auth-library";
+// import axios from "axios";
+
+// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// // 🔥 Temporary OTP Store (Memory)
+// const otpStore = {};
+
+// // ==============================
+// // SEND OTP (MSG91)
+// // ==============================
+// export const sendOtp = async (req, res) => {
+//   try {
+//     const { phone } = req.body;
+
+//     if (!phone) {
+//       return res.json({ success: false, message: "Phone required" });
+//     }
+
+//     const otp = Math.floor(1000 + Math.random() * 9000);
+
+//     otpStore[phone] = {
+//       otp,
+//       expires: Date.now() + 5 * 60 * 1000,
+//     };
+
+//     await axios.post(
+//       "https://control.msg91.com/api/v5/otp",
+//       {
+//         mobile: "91" + phone,
+//         template_id: process.env.MSG91_TEMPLATE_ID,
+//         otp: otp,
+//       },
+//       {
+//         headers: {
+//           authkey: process.env.MSG91_AUTH_KEY,
+//         },
+//       }
+//     );
+
+//     return res.json({ success: true });
+//   } catch (error) {
+//     console.log(error.response?.data || error.message);
+//     return res.json({ success: false, message: "SMS failed" });
+//   }
+// };
+
+// // ==============================
+// // VERIFY OTP
+// // ==============================
+// export const verifyOtp = async (req, res) => {
+//   try {
+//     const { phone, otp } = req.body;
+
+//     const data = otpStore[phone];
+
+//     if (!data) {
+//       return res.json({ success: false, message: "No OTP sent" });
+//     }
+
+//     if (Date.now() > data.expires) {
+//       return res.json({ success: false, message: "OTP expired" });
+//     }
+
+//     if (data.otp != otp) {
+//       return res.json({ success: false, message: "Wrong OTP" });
+//     }
+
+//     delete otpStore[phone];
+
+//     let user = await User.findOne({ phone });
+
+//     if (!user) {
+//       user = await User.create({
+//         name: "User",
+//         phone,
+//         email: phone + "@otp.com",
+//         password: "otp-login",
+//       });
+//     }
+
+//     const token = jwt.sign(
+//       { id: user._id },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "15d" }
+//     );
+
+//     res.cookie("token", token, {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//       maxAge: 15 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.json({
+//       success: true,
+//       user: {
+//         name: user.name,
+//         phone: user.phone,
+//         email: user.email,
+//       },
+//     });
+//   } catch (error) {
+//     console.log(error.message);
+//     return res.json({ success: false, message: error.message });
+//   }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+// // ==============================
+// // EMAIL LOGIN
+// // ==============================
+// export const loginUser = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     if (!email || !password) {
+//       return res.json({ success: false, message: "All fields required" });
+//     }
+
+//     const user = await User.findOne({ email });
+
+//     if (!user) {
+//       return res.json({ success: false, message: "User not found" });
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+
+//     if (!isMatch) {
+//       return res.json({ success: false, message: "Wrong password" });
+//     }
+
+//     const token = jwt.sign(
+//       { id: user._id },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "15d" }
+//     );
+
+//     res.cookie("token", token, {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//       maxAge: 15 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.json({
+//       success: true,
+//       user: {
+//         name: user.name,
+//         email: user.email,
+//       },
+//     });
+
+//   } catch (error) {
+//     return res.json({ success: false, message: "Login failed" });
+//   }
+// };
+
+
+
+// // ==============================
+// // REGISTER USER
+// // ==============================
+// export const registerUser = async (req, res) => {
+//   try {
+//     const { name, email, password } = req.body;
+
+//     if (!name || !email || !password) {
+//       return res.json({ success: false, message: "All fields required" });
+//     }
+
+//     const existingUser = await User.findOne({ email });
+
+//     if (existingUser) {
+//       return res.json({ success: false, message: "User already exists" });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const user = await User.create({
+//       name,
+//       email,
+//       password: hashedPassword,
+//     });
+
+//     const token = jwt.sign(
+//       { id: user._id },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "15d" }
+//     );
+
+//     res.cookie("token", token, {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//       maxAge: 15 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.json({
+//       success: true,
+//       user: {
+//         name: user.name,
+//         email: user.email,
+//       },
+//     });
+
+//   } catch (error) {
+//     return res.json({ success: false, message: "Register failed" });
+//   }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // ==============================
+// // GOOGLE LOGIN
+// // ==============================
+// export const googleLogin = async (req, res) => {
+//   try {
+//     const { token } = req.body;
+
+//     const ticket = await client.verifyIdToken({
+//       idToken: token,
+//       audience: process.env.GOOGLE_CLIENT_ID,
+//     });
+
+//     const payload = ticket.getPayload();
+//     const { email, name } = payload;
+
+//     let user = await User.findOne({ email });
+
+//     if (!user) {
+//       user = await User.create({
+//         name,
+//         email,
+//         password: "google-auth",
+//       });
+//     }
+
+//     const jwtToken = jwt.sign(
+//       { id: user._id },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "15d" }
+//     );
+
+//     res.cookie("token", jwtToken, {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//       maxAge: 15 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.json({
+//       success: true,
+//       user: { name: user.name, email: user.email },
+//     });
+//   } catch (error) {
+//     console.log(error.message);
+//     return res.json({ success: false, message: "Google login failed" });
+//   }
+// };
+
+// // ==============================
+// // CHECK AUTH
+// // ==============================
+// export const isAuth = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.userId).select("-password");
+//     return res.json({ success: true, user });
+//   } catch (error) {
+//     return res.json({ success: false });
+//   }
+// };
+
+// // ==============================
+// // LOGOUT
+// // ==============================
+// export const logout = async (req, res) => {
+//   try {
+//     res.clearCookie("token", {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//     });
+
+//     return res.json({ success: true });
+//   } catch (error) {
+//     return res.json({ success: false });
+//   }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -519,8 +872,17 @@ import axios from "axios";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// ✅ COMMON COOKIE CONFIG (PRODUCTION SAFE)
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,          // Render HTTPS → true
+  sameSite: "none",      // Required for cross-domain
+  maxAge: 15 * 24 * 60 * 60 * 1000,
+};
+
 // 🔥 Temporary OTP Store (Memory)
 const otpStore = {};
+
 
 // ==============================
 // SEND OTP (MSG91)
@@ -555,11 +917,13 @@ export const sendOtp = async (req, res) => {
     );
 
     return res.json({ success: true });
+
   } catch (error) {
     console.log(error.response?.data || error.message);
     return res.json({ success: false, message: "SMS failed" });
   }
 };
+
 
 // ==============================
 // VERIFY OTP
@@ -601,12 +965,7 @@ export const verifyOtp = async (req, res) => {
       { expiresIn: "15d" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 15 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.json({
       success: true,
@@ -616,21 +975,12 @@ export const verifyOtp = async (req, res) => {
         email: user.email,
       },
     });
+
   } catch (error) {
     console.log(error.message);
     return res.json({ success: false, message: error.message });
   }
 };
-
-
-
-
-
-
-
-
-
-
 
 
 // ==============================
@@ -662,12 +1012,7 @@ export const loginUser = async (req, res) => {
       { expiresIn: "15d" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 15 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.json({
       success: true,
@@ -681,7 +1026,6 @@ export const loginUser = async (req, res) => {
     return res.json({ success: false, message: "Login failed" });
   }
 };
-
 
 
 // ==============================
@@ -715,12 +1059,7 @@ export const registerUser = async (req, res) => {
       { expiresIn: "15d" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 15 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.json({
       success: true,
@@ -734,18 +1073,6 @@ export const registerUser = async (req, res) => {
     return res.json({ success: false, message: "Register failed" });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // ==============================
@@ -779,22 +1106,22 @@ export const googleLogin = async (req, res) => {
       { expiresIn: "15d" }
     );
 
-    res.cookie("token", jwtToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 15 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", jwtToken, cookieOptions);
 
     return res.json({
       success: true,
-      user: { name: user.name, email: user.email },
+      user: {
+        name: user.name,
+        email: user.email,
+      },
     });
+
   } catch (error) {
     console.log(error.message);
     return res.json({ success: false, message: "Google login failed" });
   }
 };
+
 
 // ==============================
 // CHECK AUTH
@@ -808,17 +1135,13 @@ export const isAuth = async (req, res) => {
   }
 };
 
+
 // ==============================
 // LOGOUT
 // ==============================
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-
+    res.clearCookie("token", cookieOptions);
     return res.json({ success: true });
   } catch (error) {
     return res.json({ success: false });
