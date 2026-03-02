@@ -2040,7 +2040,7 @@ const MyOrders = () => {
                                                 {product?.name || "Deleted Product"} × {item.quantity}
                                             </p>
 
-                                            <p className="font-semibold text-gray-700">
+                                            <p className="font-semibold text-gray-700 ml-3">
                                                 {currency}{item.price * item.quantity}
                                             </p>
                                         </div>
