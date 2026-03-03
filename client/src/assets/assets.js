@@ -69,6 +69,10 @@ import vanilla_muffins_image from "./vanilla_muffins_image.png";
 import quinoa_image from "./quinoa_image.png";
 import brown_rice_image from "./brown_rice_image.png";
 import barley_image from "./barley_image.png";
+import baner1 from "./baner1.png";
+import baner2 from "./baner2.png";
+import baner3 from "./baner3.png";
+import baner4 from "./baner4.png";
 
 export const assets = {
   logo,
@@ -98,7 +102,14 @@ export const assets = {
   bottom_banner_image_sm,
   add_address_iamge,
   box_icon,
+  baner1,
+  baner2,
+  baner3,
+  baner4,
 };
+
+
+
 
 export const categories = [
   {
