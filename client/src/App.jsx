@@ -336,7 +336,7 @@ const App = () => {
   }
 
   return (
-    <div className='text-default min-h-screen text-gray-700 bg-white relative'>
+    <div className='text-default min-h-screen text-gray-700 bg-slate-50 relative'>
 
       {/* 🔥 ROUTE OVERLAY LOADER */}
       {routeLoading && (
