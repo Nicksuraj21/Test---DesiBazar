@@ -550,9 +550,15 @@ app.post(
 // ==============================
 // NORMAL MIDDLEWARE (AFTER WEBHOOK)
 // ==============================
+
+
 app.use(
   cors({
-    origin: true,
+    origin: [
+      "http://localhost:5173",
+      "https://desibazar.online",
+      "https://www.desibazar.online",
+    ],
     credentials: true,
   })
 );

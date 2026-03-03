@@ -875,8 +875,9 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // ✅ COMMON COOKIE CONFIG (PRODUCTION SAFE)
 const cookieOptions = {
   httpOnly: true,
-  secure: true,          // Render HTTPS → true
-  sameSite: "none",      // Required for cross-domain
+  secure: true,
+  sameSite: "lax",              // ✅ change this
+  domain: ".desibazar.online",  // ✅ VERY IMPORTANT
   maxAge: 15 * 24 * 60 * 60 * 1000,
 };
 
@@ -1141,7 +1142,13 @@ export const isAuth = async (req, res) => {
 // ==============================
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      domain: ".desibazar.online",
+    });
+
     return res.json({ success: true });
   } catch (error) {
     return res.json({ success: false });
