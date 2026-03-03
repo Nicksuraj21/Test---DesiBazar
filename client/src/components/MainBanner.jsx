@@ -123,70 +123,6 @@
 
 
 
-// import React, { useEffect, useState } from "react"
-// import { assets } from "../assets/assets"
-
-// const MainBanner = () => {
-
-//   const banners = [
-//     assets.baner1,
-//     assets.baner2,
-//     assets.baner3,
-//   ]
-
-//   const [current, setCurrent] = useState(0)
-
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       setCurrent((prev) => (prev + 1) % banners.length)
-//     }, 3000)
-
-//     return () => clearInterval(interval)
-//   }, [])
-
-//   return (
-//     <div className="w-full overflow-hidden">
-
-//       {/* Slider */}
-//       <div
-//         className="flex transition-transform duration-700 ease-in-out"
-//         style={{ transform: `translateX(-${current * 100}%)` }}
-//       >
-//         {banners.map((banner, index) => (
-//           <img
-//             key={index}
-//             src={banner}
-//             alt="banner"
-//             className="w-full flex-shrink-0 h-[180px] md:h-[300px] lg:h-[400px] object-cover"
-//           />
-//         ))}
-//       </div>
-
-//       {/* Dots */}
-//       <div className="flex justify-center gap-2 mt-2">
-//         {banners.map((_, index) => (
-//           <div
-//             key={index}
-//             onClick={() => setCurrent(index)}
-//             className={`h-2 w-2 rounded-full cursor-pointer ${
-//               current === index ? "bg-black" : "bg-gray-400"
-//             }`}
-//           ></div>
-//         ))}
-//       </div>
-
-//     </div>
-//   )
-// }
-
-// export default MainBanner
-
-
-
-
-
-
-
 
 
 
@@ -202,6 +138,7 @@
 
 // import React, { useEffect, useRef, useState } from "react"
 // import { assets } from "../assets/assets"
+// import { Link } from "react-router-dom"
 
 // const MainBanner = () => {
 
@@ -209,9 +146,9 @@
 //     assets.baner1,
 //     assets.baner2,
 //     assets.baner3,
+//     assets.baner4,
 //   ]
 
-//   // Clone first & last
 //   const banners = [
 //     originalBanners[originalBanners.length - 1],
 //     ...originalBanners,
@@ -265,16 +202,17 @@
 //           }}
 //         >
 //           {banners.map((banner, index) => (
-//             <img
+//             <div
 //               key={index}
-//               src={banner}
-//               alt="banner"
-//               className="w-full flex-shrink-0 
-//                max-h-[280px] 
-//                md:max-h-[420px] 
-//                lg:max-h-[550px] 
-//                object-contain"
-//             />
+//               className="w-full flex-shrink-0 aspect-[9/4]"
+//             >
+//               <img
+//                 src={banner}
+//                 alt="banner"
+//                 loading="eager"
+//                 className="w-full h-full object-cover"
+//               />
+//             </div>
 //           ))}
 //         </div>
 
@@ -286,11 +224,52 @@
 //           <div
 //             key={index}
 //             onClick={() => setCurrent(index + 1)}
-//             className={`h-2 w-2 rounded-full cursor-pointer transition ${
-//               current === index + 1 ? "bg-black scale-110" : "bg-gray-400"
-//             }`}
+//             className={`h-2 w-2 rounded-full cursor-pointer transition ${current === index + 1 ? "bg-black scale-110" : "bg-gray-400"
+//               }`}
 //           />
 //         ))}
+//       </div>
+
+//       {/* 🔥 Shop Now Button */}
+//       {/* Hero Text Section */}
+//       <div className="flex flex-col items-center text-center mt-8 px-4">
+//         <h2 className="font-bold text-gray-800 leading-tight
+//                text-3xl min-[390px]:text-4xl
+//                md:text-5xl lg:text-6xl
+//                max-w-4xl text-center mx-auto">
+
+//           Freshness pe trust,
+//           <br />
+//           savings ho mast!
+
+//         </h2>
+
+//         <div className="flex items-center gap-4 mt-6">
+
+//           <Link
+//             to="/products"
+//             className="px-5 py-2 md:px-8 md:py-3
+//                bg-primary hover:bg-primary-dull
+//                text-white rounded-md
+//                transition duration-300
+//                font-medium shadow-sm hover:shadow-md
+//                text-sm md:text-base"
+//           >
+//             Shop now
+//           </Link>
+
+//           <Link
+//             to="/products"
+//             className="flex items-center gap-1.5
+//                text-gray-700
+//                font-medium text-sm md:text-base
+//                hover:gap-2 transition-all duration-300"
+//           >
+//             Explore deals
+//             <span className="text-base md:text-lg">→</span>
+//           </Link>
+
+//         </div>
 //       </div>
 
 //     </div>
@@ -298,6 +277,9 @@
 // }
 
 // export default MainBanner
+
+
+
 
 
 
@@ -344,6 +326,8 @@ const MainBanner = () => {
 
   const [current, setCurrent] = useState(1)
   const [transition, setTransition] = useState(true)
+  const [loadedImages, setLoadedImages] = useState({})
+
   const sliderRef = useRef(null)
 
   useEffect(() => {
@@ -355,6 +339,7 @@ const MainBanner = () => {
   }, [])
 
   useEffect(() => {
+
     if (current === banners.length - 1) {
       setTimeout(() => {
         setTransition(false)
@@ -375,6 +360,13 @@ const MainBanner = () => {
 
   }, [current, banners.length])
 
+  const handleImageLoad = (index) => {
+    setLoadedImages(prev => ({
+      ...prev,
+      [index]: true
+    }))
+  }
+
   return (
     <div className="w-full mt-6 md:mt-8">
 
@@ -391,13 +383,23 @@ const MainBanner = () => {
           {banners.map((banner, index) => (
             <div
               key={index}
-              className="w-full flex-shrink-0 aspect-[9/4]"
+              className="relative w-full flex-shrink-0 aspect-[9/4]"
             >
+
+              {!loadedImages[index] && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                </div>
+              )}
+
               <img
                 src={banner}
                 alt="banner"
                 loading="eager"
-                className="w-full h-full object-cover"
+                onLoad={() => handleImageLoad(index)}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${
+                  loadedImages[index] ? "opacity-100" : "opacity-0"
+                }`}
               />
             </div>
           ))}
@@ -411,13 +413,13 @@ const MainBanner = () => {
           <div
             key={index}
             onClick={() => setCurrent(index + 1)}
-            className={`h-2 w-2 rounded-full cursor-pointer transition ${current === index + 1 ? "bg-black scale-110" : "bg-gray-400"
-              }`}
+            className={`h-2 w-2 rounded-full cursor-pointer transition ${
+              current === index + 1 ? "bg-black scale-110" : "bg-gray-400"
+            }`}
           />
         ))}
       </div>
 
-      {/* 🔥 Shop Now Button */}
       {/* Hero Text Section */}
       <div className="flex flex-col items-center text-center mt-8 px-4">
         <h2 className="font-bold text-gray-800 leading-tight
