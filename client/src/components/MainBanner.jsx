@@ -378,32 +378,32 @@ const MainBanner = () => {
   return (
     <div className="w-full mt-6 md:mt-8">
 
-     <div className="relative w-full overflow-hidden">
+      <div className="relative w-full overflow-hidden">
 
-  <div
-    ref={sliderRef}
-    className="flex"
-    style={{
-      transform: `translateX(-${current * 100}%)`,
-      transition: transition ? "transform 0.7s ease-in-out" : "none"
-    }}
-  >
-    {banners.map((banner, index) => (
-      <div
-        key={index}
-        className="w-full flex-shrink-0 aspect-[16/7]"
-      >
-        <img
-          src={banner}
-          alt="banner"
-          loading="eager"
-          className="w-full h-full object-contain"
-        />
+        <div
+          ref={sliderRef}
+          className="flex"
+          style={{
+            transform: `translateX(-${current * 100}%)`,
+            transition: transition ? "transform 0.7s ease-in-out" : "none"
+          }}
+        >
+          {banners.map((banner, index) => (
+            <div
+              key={index}
+              className="w-full flex-shrink-0 aspect-[9/4]"
+            >
+              <img
+                src={banner}
+                alt="banner"
+                loading="eager"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+
       </div>
-    ))}
-  </div>
-
-</div>
 
       {/* Dots */}
       <div className="flex justify-center gap-1.5 mt-3">
