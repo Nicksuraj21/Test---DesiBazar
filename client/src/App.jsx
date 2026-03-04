@@ -307,6 +307,7 @@ import ProductList from './pages/seller/ProductList';
 import Orders from './pages/seller/Orders';
 import Loading from './components/Loading';
 import ScrollToTop from './components/ScrollToTop';
+import CartBar from "./components/CartBar"
 
 const App = () => {
 
@@ -372,6 +373,8 @@ const App = () => {
 
         </Routes>
       </div>
+
+      <CartBar/>
 
       {!isSellerPath && <Footer />}
     </div>
