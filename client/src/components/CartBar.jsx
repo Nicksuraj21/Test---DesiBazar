@@ -79,11 +79,11 @@ const CartBar = () => {
 
   return (
 
-    <div className="fixed bottom-6 left-4 right-4 flex gap-3 z-50">
+    <div className="fixed bottom-4 left-4 right-4 flex gap-3 z-50">
 
       <button
         onClick={clearCart}
-        className="w-1/2 bg-red-500 text-white py-3 text-sm font-semibold rounded-lg shadow-md hover:bg-red-600 transition"
+        className="w-1/2 bg-red-400 text-white py-3 text-sm font-semibold rounded-lg shadow-md hover:bg-red-600 transition"
       >
         Clear Cart
       </button>
