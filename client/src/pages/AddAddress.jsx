@@ -39,7 +39,7 @@
 //             [name]: value,
 //         }))
 //         console.log(address);
-        
+
 //     }
 
 
@@ -1514,7 +1514,8 @@ const InputField = ({
   address,
   required = true,
   readOnly = false,
-  error = false
+  error = false,
+  maxLength
 }) => (
   <input
     className={`w-full px-2 py-2.5 border rounded outline-none text-gray-600 focus:border-primary transition 
@@ -1526,6 +1527,7 @@ const InputField = ({
     value={address[name]}
     required={required}
     readOnly={readOnly}
+    maxLength={maxLength}
   />
 )
 
@@ -1634,8 +1636,10 @@ const AddAddress = () => {
       return
     }
 
-    if (address.street.trim().length < 25) {
-      toast.error("Address must be minimum 25 characters")
+    const len = address.street.trim().length
+
+    if (len < 25 || len > 40) {
+      toast.error("Address must be 25 - 40 characters")
       return
     }
 
@@ -1724,7 +1728,8 @@ const AddAddress = () => {
               address={address}
               name="street"
               type="text"
-              placeholder="Full Address (min 25 characters)"
+              placeholder="Full Address (25 - 40 characters)"
+              maxLength={40}
             />
 
             {/* PINCODE FIRST */}

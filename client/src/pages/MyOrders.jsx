@@ -1996,7 +1996,7 @@ const MyOrders = () => {
                         <div className="mb-4">
                             <div className="flex justify-between items-center">
                                 <p className="text-gray-500 font-medium">
-                                    Order #{order._id.slice(-6)}
+                                    Order ID: {order._id.slice(-6)}
                                 </p>
 
                                 <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700 font-medium">

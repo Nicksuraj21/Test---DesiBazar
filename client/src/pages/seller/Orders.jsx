@@ -1896,16 +1896,16 @@ import toast from 'react-hot-toast'
 const Orders = () => {
 
 
-// ************invoice code Start*********************
+  // ************invoice code Start*********************
 
-const printInvoice = (order) => {
-  const printWindow = window.open("", "_blank")
+  const printInvoice = (order) => {
+    const printWindow = window.open("", "_blank")
 
-  const itemsHtml = (order.items || []).map(item => {
-    const price = item.product?.offerPrice || item.product?.price || 0
-    const total = price * item.quantity
+    const itemsHtml = (order.items || []).map(item => {
+      const price = item.product?.offerPrice || item.product?.price || 0
+      const total = price * item.quantity
 
-    return `
+      return `
       <tr>
         <td>${item.product?.name || "Deleted Product"}</td>
         <td style="text-align:center;">${item.quantity}</td>
@@ -1913,13 +1913,13 @@ const printInvoice = (order) => {
         <td style="text-align:right;">₹${total}</td>
       </tr>
     `
-  }).join("")
+    }).join("")
 
-  const deliveryCharge = order.deliveryCharge || 0
-  const discount = order.discount || 0
-  const subtotal = order.subtotal || order.amount + discount
+    const deliveryCharge = order.deliveryCharge || 0
+    const discount = order.discount || 0
+    const subtotal = order.subtotal || order.amount + discount
 
-  printWindow.document.write(`
+    printWindow.document.write(`
     <html>
       <head>
         <title>Invoice</title>
@@ -2073,11 +2073,11 @@ const printInvoice = (order) => {
     </html>
   `)
 
-  printWindow.document.close()
-  printWindow.print()
-}
+    printWindow.document.close()
+    printWindow.print()
+  }
 
-// ************invoice code end*********************
+  // ************invoice code end*********************
 
 
 
@@ -2087,6 +2087,7 @@ const printInvoice = (order) => {
   const [orders, setOrders] = useState([])
   const [lastCount, setLastCount] = useState(0)
 
+  const [search, setSearch] = useState("")   // 👈 NEW
   const [filter, setFilter] = useState("today")
 
   const audioRef = useRef(null)
@@ -2264,6 +2265,17 @@ const printInvoice = (order) => {
           </button>
         </div>
 
+
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search Order ID..."
+          value={search}
+          maxLength={6}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full md:w-80 border px-3 py-2 rounded outline-none"
+        />
+
         {/* DASHBOARD */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
 
@@ -2298,96 +2310,100 @@ const printInvoice = (order) => {
 
         <h2 className="text-lg font-medium">Orders List</h2>
 
-        {orders.map((order) => (
-          <div key={order._id}
-            className="flex flex-col md:flex-row gap-5 justify-between p-5 max-w-4xl rounded-md border border-gray-300">
+        {orders
+          .filter(order =>
+            order._id.toLowerCase().includes(search.toLowerCase())
+          )
+          .map((order) => (
+            <div key={order._id}
+              className="flex flex-col md:flex-row gap-5 justify-between p-5 max-w-4xl rounded-md border border-gray-300">
 
-            <div className="flex flex-col gap-2">
-              <p className="text-xs text-gray-500 font-medium">
-                Order ID: #{order._id.slice(-6)}
-              </p>
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-gray-500 font-medium">
+                  Order ID: {order._id.slice(-6)}
+                </p>
 
-              <div className="flex gap-4">
-                <img className="w-12 h-12" src={assets.box_icon} />
+                <div className="flex gap-4">
+                  <img className="w-12 h-12" src={assets.box_icon} />
 
-                <div>
-                  {(order.items || []).map((item, index) => (
-                    <p key={index} className="font-medium">
-                      {item.product?.name || "Deleted Product"}
-                      <span className="text-primary"> x {item.quantity}</span>
-                    </p>
-                  ))}
+                  <div>
+                    {(order.items || []).map((item, index) => (
+                      <p key={index} className="font-medium">
+                        {item.product?.name || "Deleted Product"}
+                        <span className="text-primary"> x {item.quantity}</span>
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="text-sm text-black/70">
-              <p className='font-medium'>
-                {order.address.firstName} {order.address.lastName}
-              </p>
-              <p>{order.address.street}</p>
-              <p>{order.address.city}</p>
-              <p>{order.address.phone}</p>
-            </div>
+              <div className="text-sm text-black/70">
+                <p className='font-medium'>
+                  {order.address.firstName} {order.address.lastName}
+                </p>
+                <p>{order.address.street}</p>
+                <p>{order.address.city}</p>
+                <p>{order.address.phone}</p>
+              </div>
 
-            <div className="text-center">
-              <p className="font-medium text-lg">
-                {currency}{order.amount}
-              </p>
-              <p className="text-xs text-gray-500">
-                {formatDateTime(order.createdAt)}
-              </p>
+              <div className="text-center">
+                <p className="font-medium text-lg">
+                  {currency}{order.amount}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatDateTime(order.createdAt)}
+                </p>
 
-              {/* 👇 print button */}
-              <button
-                onClick={() => printInvoice(order)}
-                className="px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800">
-                🖨 Print Invoice
-              </button>
-
-            </div>
-
-            <div className="flex flex-col items-end gap-2">
-
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-                {order.status}
-              </span>
-
-              <select
-                value={order.status}
-                onChange={(e) => changeStatus(order._id, e.target.value)}
-                disabled={order.status === "Cancelled" || order.status === "Canceled"}
-                className={`border px-2 py-1 rounded text-sm 
-                ${(order.status === "Cancelled" || order.status === "Canceled")
-                    ? "bg-gray-200 cursor-not-allowed"
-                    : ""}`}
-              >
-                <option>Order Placed</option>
-                <option>Packed</option>
-                <option>Out for delivery</option>
-                <option>Delivered</option>
-                <option>Cancelled</option>
-              </select>
-
-              <p className="text-xs text-gray-500">
-                {order.paymentType} • {
-                  order.paymentType === "COD"
-                    ? "Pay on Delivery"
-                    : order.paymentStatus
-                }
-              </p>
-
-              {order.location?.lat && order.location?.lng && (
+                {/* 👇 print button */}
                 <button
-                  onClick={() => openMap(order.location)}
-                  className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">
-                  📍 Track on Map
+                  onClick={() => printInvoice(order)}
+                  className="px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800">
+                  🖨 Print Invoice
                 </button>
-              )}
 
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
+                  {order.status}
+                </span>
+
+                <select
+                  value={order.status}
+                  onChange={(e) => changeStatus(order._id, e.target.value)}
+                  disabled={order.status === "Cancelled" || order.status === "Canceled"}
+                  className={`border px-2 py-1 rounded text-sm 
+                ${(order.status === "Cancelled" || order.status === "Canceled")
+                      ? "bg-gray-200 cursor-not-allowed"
+                      : ""}`}
+                >
+                  <option>Order Placed</option>
+                  <option>Packed</option>
+                  <option>Out for delivery</option>
+                  <option>Delivered</option>
+                  <option>Cancelled</option>
+                </select>
+
+                <p className="text-xs text-gray-500">
+                  {order.paymentType} • {
+                    order.paymentType === "COD"
+                      ? "Pay on Delivery"
+                      : order.paymentStatus
+                  }
+                </p>
+
+                {order.location?.lat && order.location?.lng && (
+                  <button
+                    onClick={() => openMap(order.location)}
+                    className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">
+                    📍 Track on Map
+                  </button>
+                )}
+
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   )
