@@ -1859,7 +1859,7 @@ const MyOrders = () => {
     const [myOrders, setMyOrders] = useState([])
     const [tick, setTick] = useState(0)
     const { currency, axios, user } = useAppContext()
-    
+
     // *****for see all button setExpandedOrders ****
     const [expandedOrders, setExpandedOrders] = useState({})
 
@@ -1945,10 +1945,13 @@ const MyOrders = () => {
 
         const total = 30 * 60 * 1000
         const diff = total - (now - created)
-        if (diff <= 0) return "Arriving now"
+
+        // 🔥 30 min cross
+        if (diff <= 0) return "shortly"
 
         const mins = Math.floor(diff / 60000)
         const secs = Math.floor((diff % 60000) / 1000)
+
         return `${mins}m ${secs}s`
     }
 
@@ -2113,7 +2116,9 @@ const MyOrders = () => {
                                 <p className="font-semibold text-green-600 tabular-nums">
                                     {effectiveStatus === "Delivered"
                                         ? getDeliveryTimeText(order)
-                                        : `Arriving in ${getDeliveryTimeText(order)} ⚡`}
+                                        : getDeliveryTimeText(order) === "shortly"
+                                            ? "Arriving shortly ⚡"
+                                            : `Arriving in ${getDeliveryTimeText(order)} ⚡`}
                                 </p>
                             )}
 

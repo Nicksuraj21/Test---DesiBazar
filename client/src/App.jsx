@@ -382,3 +382,141 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ---------Updated App.jsx (Fast Version)-----------
+
+
+// import React, { useEffect, useState, Suspense, lazy } from 'react'
+// import Navbar from './components/Navbar'
+// import { Route, Routes, useLocation } from 'react-router-dom'
+// import { Toaster } from "react-hot-toast";
+// import Footer from './components/Footer';
+// import { useAppContext } from './context/AppContext';
+// import Login from './components/Login';
+// import Loading from './components/Loading';
+// import ScrollToTop from './components/ScrollToTop';
+// import CartBar from "./components/CartBar"
+
+// // 🔥 Lazy load pages
+// const Home = lazy(() => import('./pages/Home'))
+// const AllProducts = lazy(() => import('./pages/AllProducts'))
+// const ProductCategory = lazy(() => import('./pages/ProductCategory'))
+// const ProductDetails = lazy(() => import('./pages/ProductDetails'))
+// const Cart = lazy(() => import('./pages/Cart'))
+// const AddAddress = lazy(() => import('./pages/AddAddress'))
+// const MyOrders = lazy(() => import('./pages/MyOrders'))
+
+// // seller
+// const SellerLogin = lazy(() => import('./components/seller/SellerLogin'))
+// const SellerLayout = lazy(() => import('./pages/seller/SellerLayout'))
+// const AddProduct = lazy(() => import('./pages/seller/AddProduct'))
+// const ProductList = lazy(() => import('./pages/seller/ProductList'))
+// const Orders = lazy(() => import('./pages/seller/Orders'))
+
+// const App = () => {
+
+//   const location = useLocation();
+//   const [routeLoading, setRouteLoading] = useState(false);
+
+//   const isSellerPath = location.pathname.includes("seller");
+//   const { showUserLogin, isSeller, loading, sellerLoading } = useAppContext();
+
+//   useEffect(() => {
+//     setRouteLoading(true);
+
+//     const timer = setTimeout(() => {
+//       setRouteLoading(false);
+//     }, 300);
+
+//     return () => clearTimeout(timer);
+//   }, [location]);
+
+//   if (loading || sellerLoading) {
+//     return (
+//       <div className='flex items-center justify-center h-screen'>
+//         <Loading />
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className='text-default min-h-screen text-gray-700 bg-slate-50 relative'>
+
+//       {routeLoading && (
+//         <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+//           <Loading />
+//         </div>
+//       )}
+
+//       {!isSellerPath && <Navbar />}
+//       {showUserLogin && <Login />}
+//       <Toaster />
+
+//       <div className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"}`}>
+//         <ScrollToTop />
+
+//         {/* 🔥 Suspense loader */}
+//         <Suspense fallback={
+//           <div className='flex justify-center items-center h-[60vh]'>
+//             <Loading/>
+//           </div>
+//         }>
+
+//           <Routes>
+//             <Route path='/' element={<Home />} />
+//             <Route path='/products' element={<AllProducts />} />
+//             <Route path='/products/:category' element={<ProductCategory />} />
+//             <Route path='/products/:category/:id' element={<ProductDetails />} />
+//             <Route path='/cart' element={<Cart />} />
+//             <Route path='/add-address' element={<AddAddress />} />
+//             <Route path='/my-orders' element={<MyOrders />} />
+
+//             <Route
+//               path='/seller'
+//               element={isSeller ? <SellerLayout /> : <SellerLogin />}
+//             >
+//               <Route index element={isSeller ? <AddProduct /> : null} />
+//               <Route path='product-list' element={<ProductList />} />
+//               <Route path='orders' element={<Orders />} />
+//             </Route>
+
+//           </Routes>
+
+//         </Suspense>
+
+//       </div>
+
+//       <CartBar/>
+
+//       {!isSellerPath && <Footer />}
+//     </div>
+//   );
+// };
+
+// export default App;
