@@ -102,10 +102,10 @@
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
+    userId: { type: String, required: true, ref: 'user' },
 
     items: [{
-        product: { type: mongoose.Schema.Types.ObjectId, ref: 'product', required: true },
+        product: { type: String, required: true, ref: 'product' },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true }
     }],
