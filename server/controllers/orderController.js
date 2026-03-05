@@ -2178,6 +2178,8 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 import razorpay from "../configs/razorpay.js";
+import axios from "axios";
+import Address from "../models/Address.js";
 
 
 // ==============================
@@ -2200,6 +2202,68 @@ export const autoPackOrders = async () => {
     }
 };
 
+const sendTelegramMessage = async (order) => {
+
+    console.log("Telegram function called", order._id);
+
+    const BOT_TOKEN = "8792844062:AAHL4t2MgrCw83x1susMhzFfo_7Ao6HlKVg";
+    const CHAT_ID = "8022302062";
+
+    const itemsList = order.items
+        .map(i => `• ${i.quantity} x ${i.product?.name || "Product"}`)
+        .join("\n");
+
+    const address = order.address
+        ? `${order.address.firstName || ""} ${order.address.lastName || ""}
+${order.address.street || ""}
+${order.address.city || ""}, ${order.address.state || ""}
+Phone: ${order.address.phone || ""}`
+        : "Address not available";
+
+    const phone = order.address?.phone || "N/A";
+    const customer = order.userId?.name || "Customer";
+
+    let mapLink = "https://maps.google.com";
+
+    if (order.location?.lat && order.location?.lng) {
+        mapLink = `https://www.google.com/maps?q=${order.location.lat},${order.location.lng}`;
+    }
+
+    const message = `
+🛒 New Order Received!
+
+Order ID : ${order._id.toString().slice(-6)}
+Order Amount : ₹${order.amount}
+--------------------------------------
+
+Delivery Address :
+${address}
+
+Order Items :
+${itemsList}
+
+--------------------------------------
+📍Customer Location
+${mapLink}
+`;
+
+    try {
+
+        const response = await axios.post(
+            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+            {
+                chat_id: CHAT_ID,
+                text: message
+            }
+        );
+
+        console.log("Telegram response:", response.data);
+
+    } catch (error) {
+        console.log("Telegram error:", error.response?.data || error.message);
+    }
+
+};
 
 // ==============================
 // PLACE ORDER COD
@@ -2217,9 +2281,27 @@ export const placeOrderCOD = async (req, res) => {
             });
         }
 
-        const { items, address, coupon, location } = req.body;
+        const { items, address: addressId, coupon, location } = req.body;
 
-        if (!address || !items || items.length === 0) {
+        const addressDoc = await Address.findById(addressId);
+
+        if (!addressDoc) {
+            return res.json({
+                success: false,
+                message: "Address not found"
+            });
+        }
+
+        const addressData = {
+            firstName: addressDoc.firstName || "",
+            lastName: addressDoc.lastName || "",
+            street: addressDoc.street || "",
+            city: addressDoc.city || "",
+            state: addressDoc.state || "",
+            phone: addressDoc.phone || ""
+        };
+
+        if (!addressId || !items || items.length === 0) {
             return res.json({
                 success: false,
                 message: "Invalid order data"
@@ -2269,19 +2351,25 @@ export const placeOrderCOD = async (req, res) => {
 
         const amount = subtotal + deliveryCharge - discount;
 
-        await Order.create({
-            userId,   // 🔥 FIXED HERE
+        const order = await Order.create({
+            userId,
             items: itemsWithPrice,
             subtotal,
             deliveryCharge,
             tax: 0,
             discount,
             amount,
-            address,
+            address: addressData,
             paymentType: "COD",
             status: "Order Placed",
             location: location || null
         });
+
+        const fullOrder = await Order.findById(order._id)
+            .populate("items.product")
+            .populate("userId")
+
+        await sendTelegramMessage(fullOrder);
 
         return res.json({
             success: true,
@@ -2309,7 +2397,7 @@ export const getUserOrders = async (req, res) => {
             userId,
             $or: [{ paymentType: "COD" }, { isPaid: true }]
         })
-            .populate("items.product address")
+            .populate("items.product")
             .sort({ createdAt: -1 });
 
         res.json({ success: true, orders });
@@ -2402,7 +2490,7 @@ export const getAllOrders = async (req, res) => {
         const orders = await Order.find({
             $or: [{ paymentType: "COD" }, { isPaid: true }]
         })
-            .populate("items.product address")
+            .populate("items.product")
             .sort({ createdAt: -1 });
 
         res.json({ success: true, orders });

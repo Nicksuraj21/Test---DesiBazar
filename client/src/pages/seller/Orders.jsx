@@ -2027,12 +2027,12 @@ const Orders = () => {
             <strong>Date:</strong> ${new Date(order.createdAt).toLocaleString("en-IN")}
           </div>
 
-          <div class="section">
-            <strong>Customer Details:</strong><br/>
-            ${order.address.firstName} ${order.address.lastName},<br/>
-            ${order.address.street}, ${order.address.city}<br/>
-            Phone: ${order.address.phone}
-          </div>
+        <div class="section">
+  <strong>Customer Details:</strong><br/>
+  ${order.address?.firstName || ""} ${order.address?.lastName || ""},<br/>
+  ${order.address?.street || ""}, ${order.address?.city || ""}<br/>
+  Phone: ${order.address?.phone || ""}
+</div>
 
           <div class="section">
             <table>
@@ -2361,11 +2361,11 @@ const Orders = () => {
 
               <div className="text-sm text-black/70">
                 <p className='font-medium'>
-                  {order.address.firstName} {order.address.lastName}
+                  {order.address?.firstName} {order.address?.lastName}
                 </p>
-                <p>{order.address.street}</p>
-                <p>{order.address.city}</p>
-                <p>{order.address.phone}</p>
+                <p>{order.address?.street}</p>
+                <p>{order.address?.city}</p>
+                <p>{order.address?.phone}</p>
               </div>
 
               <div className="text-center">
