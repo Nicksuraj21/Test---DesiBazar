@@ -319,14 +319,16 @@ const App = () => {
 
   // 🔥 Route change loader
   useEffect(() => {
-    setRouteLoading(true);
+
+    setRouteLoading(true)
 
     const timer = setTimeout(() => {
-      setRouteLoading(false);
-    }, 400); // smooth delay
+      setRouteLoading(false)
+    }, 250)
 
-    return () => clearTimeout(timer);
-  }, [location]);
+    return () => clearTimeout(timer)
+
+  }, [location.pathname])
 
   if (loading || sellerLoading) {
     return (
@@ -340,11 +342,7 @@ const App = () => {
     <div className='text-default min-h-screen text-gray-700 bg-slate-50 relative'>
 
       {/* 🔥 ROUTE OVERLAY LOADER */}
-      {routeLoading && (
-        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-          <Loading />
-        </div>
-      )}
+      {routeLoading && <Loading />}
 
       {!isSellerPath && <Navbar />}
       {showUserLogin && <Login />}
@@ -374,7 +372,7 @@ const App = () => {
         </Routes>
       </div>
 
-      <CartBar/>
+      <CartBar />
 
       {!isSellerPath && <Footer />}
     </div>

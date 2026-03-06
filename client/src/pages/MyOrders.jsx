@@ -1865,7 +1865,7 @@ const MyOrders = () => {
     // *****for see all button setExpandedOrders ****
     const [expandedOrders, setExpandedOrders] = useState({})
 
-    const fetchMyOrders = async (showLoader = false) => {
+    const fetchMyOrders = async (showLoader = true) => {
         try {
 
             if (showLoader) {
@@ -1892,7 +1892,7 @@ const MyOrders = () => {
     useEffect(() => {
         if (!user) return;
         // first time loader
-        fetchMyOrders(true)
+        fetchMyOrders()
         const interval = setInterval(() => {
             fetchMyOrders(false) // no loader
         }, 5000)
@@ -1905,9 +1905,6 @@ const MyOrders = () => {
         return () => clearInterval(t)
     }, [])
 
-    if (loading) {
-        return <Loading />
-    }
 
 
     // 🧠 FRONTEND EFFECTIVE STATUS
@@ -1995,10 +1992,20 @@ const MyOrders = () => {
 
     return (
         <div className='mt-16 pb-16'>
+
+            {loading && <Loading />}
+
             <div className='flex flex-col items-end w-max mb-8'>
                 <p className='text-2xl font-medium uppercase'>My orders</p>
                 <div className='w-16 h-0.5 bg-primary rounded-full'></div>
             </div>
+
+            {!loading && myOrders.length === 0 && (
+                <div className="text-center mt-20 text-gray-500">
+                    <p className="text-lg font-medium">No Orders Yet</p>
+                    <p className="text-sm mt-1">Your orders will appear here.</p>
+                </div>
+            )}
 
             {myOrders.map(order => {
 
