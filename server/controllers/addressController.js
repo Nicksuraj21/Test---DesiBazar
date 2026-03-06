@@ -72,12 +72,63 @@ export const getAddress = async(req, res)=>{
     try {
         const userId = req.userId
 
-        const addresses = await Address.find({userId})
+        const addresses = await Address.find({userId}).sort({ isDefault: -1 })
 
         res.json({
             success: true,
             addresses
         })
+    } catch (error) {
+        res.json({ success:false, message:error.message })
+    }
+}
+
+
+
+// DELETE ADDRESS
+export const deleteAddress = async (req, res) => {
+    try {
+
+        const { id } = req.params
+
+        await Address.findByIdAndDelete(id)
+
+        res.json({
+            success: true,
+            message: "Address deleted"
+        })
+
+    } catch (error) {
+        res.json({ success:false, message:error.message })
+    }
+}
+
+
+
+
+// Set Default Address
+export const setDefaultAddress = async (req, res) => {
+    try {
+
+        const userId = req.userId
+        const { id } = req.params
+
+        // remove previous default
+        await Address.updateMany(
+            { userId },
+            { $set: { isDefault: false } }
+        )
+
+        // set new default
+        await Address.findByIdAndUpdate(id, {
+            isDefault: true
+        })
+
+        res.json({
+            success: true,
+            message: "Default address updated"
+        })
+
     } catch (error) {
         res.json({ success:false, message:error.message })
     }
