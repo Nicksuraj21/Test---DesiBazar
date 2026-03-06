@@ -1851,6 +1851,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppContext } from '../context/AppContext'
+import Loading from "../components/Loading"
 
 const CANCEL_WINDOW = 2 * 60 * 1000 // 2 minutes
 
@@ -1859,23 +1860,42 @@ const MyOrders = () => {
     const [myOrders, setMyOrders] = useState([])
     const [tick, setTick] = useState(0)
     const { currency, axios, user } = useAppContext()
+    const [loading, setLoading] = useState(true)
 
     // *****for see all button setExpandedOrders ****
     const [expandedOrders, setExpandedOrders] = useState({})
 
-    const fetchMyOrders = async () => {
+    const fetchMyOrders = async (showLoader = false) => {
         try {
+
+            if (showLoader) {
+                setLoading(true)
+            }
+
             const { data } = await axios.get('/api/order/user')
-            if (data.success) setMyOrders(data.orders)
+
+            if (data.success) {
+                setMyOrders(data.orders)
+            }
+
         } catch (error) {
-            console.log(error);
+            console.log(error)
+        } finally {
+
+            if (showLoader) {
+                setLoading(false)
+            }
+
         }
     }
 
     useEffect(() => {
         if (!user) return;
-        fetchMyOrders();
-        const interval = setInterval(fetchMyOrders, 5000)
+        // first time loader
+        fetchMyOrders(true)
+        const interval = setInterval(() => {
+            fetchMyOrders(false) // no loader
+        }, 5000)
         return () => clearInterval(interval)
     }, [user])
 
@@ -1884,6 +1904,11 @@ const MyOrders = () => {
         const t = setInterval(() => setTick(p => p + 1), 1000)
         return () => clearInterval(t)
     }, [])
+
+    if (loading) {
+        return <Loading />
+    }
+
 
     // 🧠 FRONTEND EFFECTIVE STATUS
     const getEffectiveStatus = (order) => {

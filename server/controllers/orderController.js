@@ -2206,8 +2206,8 @@ const sendTelegramMessage = async (order) => {
 
     console.log("Telegram function called", order._id);
 
-    const BOT_TOKEN = "8792844062:AAHL4t2MgrCw83x1susMhzFfo_7Ao6HlKVg";
-    const CHAT_ID = "8022302062";
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
     const itemsList = order.items
         .map(i => `• ${i.quantity} x ${i.product?.name || "Product"}`)
@@ -2235,14 +2235,13 @@ Phone: ${order.address.phone || ""}`
 Order ID : ${order._id.toString().slice(-6)}
 Order Amount : ₹${order.amount}
 --------------------------------------
-
-Delivery Address :
-${address}
-
 Order Items :
 ${itemsList}
 
 --------------------------------------
+Delivery Address :
+${address}
+
 📍Customer Location
 ${mapLink}
 `;
@@ -2282,6 +2281,27 @@ export const placeOrderCOD = async (req, res) => {
         }
 
         const { items, address: addressId, coupon, location } = req.body;
+
+        // ==============================
+        // DUPLICATE ORDER PROTECTION
+        // ==============================
+        const lastOrder = await Order.findOne({
+            userId,
+            status: "Order Placed"
+        }).sort({ createdAt: -1 });
+
+        if (lastOrder) {
+
+            const lastOrderTime = new Date(lastOrder.createdAt).getTime();
+            const now = Date.now();
+
+            if (now - lastOrderTime < 10000) {
+                return res.json({
+                    success: false,
+                    message: "Order already placed. Please wait."
+                });
+            }
+        }
 
         const addressDoc = await Address.findById(addressId);
 
@@ -2368,8 +2388,9 @@ export const placeOrderCOD = async (req, res) => {
         const fullOrder = await Order.findById(order._id)
             .populate("items.product")
             .populate("userId")
+            .lean();
 
-        await sendTelegramMessage(fullOrder);
+        sendTelegramMessage(fullOrder);
 
         return res.json({
             success: true,
