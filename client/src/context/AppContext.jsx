@@ -322,7 +322,7 @@ export const AppContextProvider = ({ children }) => {
 
             {
                 enableHighAccuracy: true,
-                timeout: 10000,
+                timeout: 4000,
                 maximumAge: 0
             }
         );
