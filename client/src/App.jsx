@@ -312,10 +312,14 @@ import CartBar from "./components/CartBar"
 const App = () => {
 
   const location = useLocation();
+
+  const showLocationBanner =
+    location.pathname === "/" || location.pathname === "/cart";
+
   const [routeLoading, setRouteLoading] = useState(false);
 
   const isSellerPath = location.pathname.includes("seller");
-  const { showUserLogin, isSeller, loading, sellerLoading } = useAppContext();
+  const { showUserLogin, isSeller, loading, sellerLoading, locationBlocked } = useAppContext();
 
   // 🔥 Route change loader
   useEffect(() => {
@@ -345,6 +349,36 @@ const App = () => {
       {routeLoading && <Loading />}
 
       {!isSellerPath && <Navbar />}
+
+      {locationBlocked && showLocationBanner && (
+        <div className="bg-yellow-100 border-b border-yellow-200 px-3 py-1.5 flex items-center justify-between text-xs">
+
+          <div className="flex items-center gap-2 text-yellow-800">
+            <span>📍</span>
+            <span className="font-medium">Enable location For Fast Delivery</span>
+          </div>
+
+          <button
+            onClick={() => {
+              if (!navigator.geolocation) {
+                alert("Location not supported");
+                return;
+              }
+
+              navigator.geolocation.getCurrentPosition(
+                () => window.location.reload(),
+                () => alert("Please enable location from browser settings")
+              );
+            }}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-xs font-medium"
+          >
+            Allow
+          </button>
+
+        </div>
+      )}
+
+
       {showUserLogin && <Login />}
       <Toaster />
 

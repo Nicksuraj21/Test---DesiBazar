@@ -220,6 +220,17 @@ export const AppContextProvider = ({ children }) => {
     const [showUserLogin, setShowUserLogin] = useState(false);
     const [products, setProducts] = useState([]);
 
+    const [userLocation, setUserLocation] = useState(() => {
+        try {
+            const saved = localStorage.getItem("userLocation");
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    const [locationBlocked, setLocationBlocked] = useState(false);
+
     // 🔥 LOAD CART FROM LOCALSTORAGE FIRST
     const [cartItems, setCartItems] = useState(() => {
         try {
@@ -246,6 +257,75 @@ export const AppContextProvider = ({ children }) => {
         } finally {
             setSellerLoading(false);
         }
+    };
+
+
+    // ==============================
+    // LOCATION PERMISSION CHECK
+    // ==============================
+    const checkLocationPermission = async () => {
+
+        if (!navigator.geolocation) {
+            console.log("Geolocation not supported");
+            return;
+        }
+
+        try {
+
+            const permission = await navigator.permissions.query({
+                name: "geolocation"
+            });
+
+            if (permission.state === "granted") {
+
+                getUserLocation();
+
+            } else if (permission.state === "prompt") {
+
+                getUserLocation();
+
+            } else if (permission.state === "denied") {
+
+                setLocationBlocked(true);
+
+            }
+
+        } catch {
+            getUserLocation();
+        }
+    };
+
+
+    const getUserLocation = () => {
+
+        navigator.geolocation.getCurrentPosition(
+
+            (position) => {
+
+                const location = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+                setUserLocation(location);
+                localStorage.setItem("userLocation", JSON.stringify(location));
+
+            },
+
+            (error) => {
+
+                if (error.code === 1) {
+                    setLocationBlocked(true);
+                }
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
     };
 
     // ==============================
@@ -311,6 +391,7 @@ export const AppContextProvider = ({ children }) => {
         fetchUser();
         fetchSeller();
         fetchProducts();
+        checkLocationPermission();
     }, []);
 
     useEffect(() => {
@@ -446,7 +527,11 @@ export const AppContextProvider = ({ children }) => {
         axios,
         fetchProducts,
         setCartItems,
-        loading
+        loading,
+        userLocation,
+        setUserLocation,
+        getUserLocation,
+        locationBlocked
     };
 
     return (

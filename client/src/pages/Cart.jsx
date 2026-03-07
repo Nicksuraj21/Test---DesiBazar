@@ -2625,7 +2625,7 @@ const Cart = () => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [paymentOption, setPaymentOption] = useState("COD");
 
-    const [userLocation, setUserLocation] = useState(null);
+    const { userLocation, setUserLocation } = useAppContext();
 
     const [coupon, setCoupon] = useState("");
     const [discount, setDiscount] = useState(0);
@@ -2769,6 +2769,67 @@ const Cart = () => {
     };
 
 
+    /* ================= Fresh Location Before Order ================= */
+    const requestLocationBeforeOrder = () => {
+        return new Promise((resolve, reject) => {
+
+            if (!navigator.geolocation) {
+                toast.error("Location not supported");
+                reject();
+                return;
+            }
+
+            setIsLocating(true);
+
+            navigator.geolocation.getCurrentPosition(
+
+                (position) => {
+
+                    const location = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    // store latest location
+                    setUserLocation(location);
+
+                    setIsLocating(false);
+                    resolve(location);
+
+                },
+
+                (error) => {
+
+                    setIsLocating(false);
+
+                    if (error.code === 1) {
+                        toast.error("Location permission required to place order");
+                    }
+                    else if (error.code === 2) {
+                        toast.error("Location unavailable");
+                    }
+                    else if (error.code === 3) {
+                        toast.error("Location request timeout");
+                    }
+                    else {
+                        toast.error("Unable to fetch location");
+                    }
+
+                    reject(error);
+                },
+
+                {
+                    enableHighAccuracy: true,  // best GPS accuracy
+                    timeout: 10000,            // max wait 10 sec
+                    maximumAge: 0              // always fresh location
+                }
+
+            );
+
+        });
+    };
+
+
     /* ================= RAZORPAY UPI ================= */
     const handleUpiPayment = async () => {
 
@@ -2786,6 +2847,8 @@ const Cart = () => {
 
         try {
 
+            const location = await requestLocationBeforeOrder();
+
             // 🔥 CREATE ORDER (UPI)
             const { data } = await axios.post(
                 "/api/payment/create-upi-order",
@@ -2797,7 +2860,7 @@ const Cart = () => {
                     })),
                     address: selectedAddress._id,
                     coupon,
-                    location: userLocation || null
+                    location
                 },
                 {
                     withCredentials: true   // 👈 COOKIE FIX
@@ -2857,6 +2920,12 @@ const Cart = () => {
                 theme: { color: "#16a34a" }
             };
 
+            // 🔒 Razorpay load check
+            if (!window.Razorpay) {
+                toast.error("Payment system not loaded");
+                return;
+            }
+
             const rzp = new window.Razorpay(options);
             rzp.open();
 
@@ -2868,7 +2937,8 @@ const Cart = () => {
 
 
     /* ================= PLACE ORDER COD ================= */
-    const placeOrder = async () => {
+    const placeOrder = () => {
+
         if (isPlacingOrder) return;
 
         if (!user) {
@@ -2885,36 +2955,45 @@ const Cart = () => {
 
         setIsPlacingOrder(true);
 
+        // 🔥 background order
+        processOrder();
+    };
+
+    const processOrder = async () => {
         try {
+
+            const location = await requestLocationBeforeOrder();
+
             if (paymentOption === "COD") {
+
                 const { data } = await axios.post("/api/order/cod", {
-                    userId: user._id,
                     items: cartArray.map(item => ({
                         product: item._id,
                         quantity: item.quantity
                     })),
                     address: selectedAddress._id,
                     coupon,
-                    location: userLocation || null
+                    location
                 });
 
                 if (data.success) {
-                    toast.success(data.message);
                     setCartItems({});
                     navigate("/my-orders");
-                } else {
-                    toast.error(data.message);
+                    toast.success("Order placed successfully");
                 }
+
             } else {
+
                 await handleUpiPayment();
+
             }
+
         } catch (error) {
-            toast.error(error.message);
+            toast.error("Order failed");
         } finally {
             setIsPlacingOrder(false);
         }
     };
-
 
     useEffect(() => {
         if (products.length > 0) getCart();
@@ -3047,11 +3126,11 @@ const Cart = () => {
 
                                 className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium"
                             >
-                                Add/Change
+                                Add Address & Change
                             </button>
 
 
-                            <button
+                            {/* <button
                                 onClick={getCurrentLocation}
                                 disabled={isLocating}
                                 className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition font-medium flex items-center gap-2 disabled:opacity-60"
@@ -3061,16 +3140,16 @@ const Cart = () => {
                                 )}
 
                                 {isLocating ? "Getting location..." : "📍 Share Current Location"}
-                            </button>
+                            </button> */}
 
                         </div>
                     </div>
 
-                    {userLocation && (
+                    {/* {userLocation && (
                         <p className="text-green-600 text-xs mt-1">
                             Location added successfully
                         </p>
-                    )}
+                    )} */}
 
 
                     {showAddress && (
