@@ -2382,7 +2382,7 @@ export const placeOrderCOD = async (req, res) => {
             address: addressData,
             paymentType: "COD",
             status: "Order Placed",
-            location: location || null
+            location: location ?? null
         });
 
         const fullOrder = await Order.findById(order._id)
@@ -2394,7 +2394,8 @@ export const placeOrderCOD = async (req, res) => {
 
         return res.json({
             success: true,
-            message: "Order Placed Successfully"
+            message: "Order Placed Successfully",
+            orderId: order._id
         });
 
     } catch (error) {

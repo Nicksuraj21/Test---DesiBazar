@@ -408,6 +408,68 @@ export const AppContextProvider = ({ children }) => {
 
     }, []);
 
+
+
+
+
+
+
+
+
+    useEffect(() => {
+
+    const refreshLocation = () => {
+
+        if (!navigator.geolocation) return;
+
+        navigator.geolocation.getCurrentPosition(
+
+            (position) => {
+
+                const location = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+                setUserLocation(location);
+                localStorage.setItem("userLocation", JSON.stringify(location));
+
+                console.log("Location refreshed:", location);
+
+            },
+
+            () => { },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 4000,
+                maximumAge: 0
+            }
+
+        );
+
+    };
+
+    // first run
+    refreshLocation();
+
+    // refresh every 5 min
+    const interval = setInterval(refreshLocation, 300000);
+
+    return () => clearInterval(interval);
+
+}, []);
+
+
+
+
+
+
+
+
+
+
+
     // ==============================
     // 🔥 LOCAL STORAGE SYNC
     // ==============================

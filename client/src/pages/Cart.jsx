@@ -230,7 +230,7 @@ const Cart = () => {
                     setIsLocating(false);
 
                     if (error.code === 1) {
-                        toast.error("Location permission required to place order");
+                        // toast.error("Location permission required to place order");
                     }
                     else if (error.code === 2) {
                         toast.error("Location unavailable");
@@ -392,10 +392,33 @@ const Cart = () => {
     };
 
 
+
+    const getOrderLocation = async () => {
+        try {
+            const loc = await requestLocationBeforeOrder();
+            return loc;
+        } catch {
+            let cached = null;
+
+            try {
+                cached =
+                    userLocation ||
+                    JSON.parse(localStorage.getItem("userLocation") || "null")
+            } catch {
+                cached = userLocation || null;
+            }
+            return cached;
+        }
+    };
+
+
+
     const processOrder = async () => {
         try {
 
             if (paymentOption === "COD") {
+
+                const location = await getOrderLocation();
 
                 const { data } = await axios.post("/api/order/cod", {
                     items: cartArray.map(item => ({
@@ -403,23 +426,27 @@ const Cart = () => {
                         quantity: item.quantity
                     })),
                     address: selectedAddress._id,
-                    coupon
+                    coupon,
+                    location
                 });
 
                 if (data.success) {
 
+                    setCartItems({});
+                    toast.success("Order placed successfully");
+
+                    const orderId = data.orderId;
+
                     requestLocationBeforeOrder()
                         .then(loc => {
                             axios.post("/api/order/update-location", {
-                                orderId: data.orderId,
+                                orderId,
                                 location: loc
                             });
                         })
                         .catch(() => { });
 
-                    setCartItems({});
                     navigate("/my-orders");
-                    toast.success("Order placed successfully");
                 }
 
             } else {
