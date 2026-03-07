@@ -2625,6 +2625,9 @@ const Cart = () => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [paymentOption, setPaymentOption] = useState("COD");
 
+    const [defaultLoading, setDefaultLoading] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(null);
+
     const { userLocation, setUserLocation } = useAppContext();
 
     const [coupon, setCoupon] = useState("");
@@ -2673,6 +2676,9 @@ const Cart = () => {
 
     const finalTotal = cartAmount + deliveryCharge - discount;
 
+    const freeDeliveryTarget = 100;
+    const remainingForFreeDelivery = freeDeliveryTarget - cartAmount;
+
     /* ================= CART ================= */
     const getCart = () => {
         let tempArray = [];
@@ -2717,29 +2723,47 @@ const Cart = () => {
 
     /* ================= ADDRESS SET AS DEFAULT ================= */
     const setDefaultAddress = async (id) => {
+
+        setDefaultLoading(id);
+
         try {
-            const { data } = await axios.put(`/api/address/default/${id}`)
+
+            const { data } = await axios.put(`/api/address/default/${id}`);
+
             if (data.success) {
-                toast.success("Default address updated")
-                getUserAddress()
+                toast.success("Default address updated");
+                getUserAddress();
             }
+
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.message);
+        } finally {
+            setDefaultLoading(null);
         }
-    }
+
+    };
 
     /* =================  CONFIRM DELETE ADDRESS ================= */
     const confirmDeleteAddress = async () => {
+
+        setDeleteLoading(deleteId);
+
         try {
+
             const { data } = await axios.delete(`/api/address/delete/${deleteId}`);
+
             if (data.success) {
                 toast.success("Address deleted");
                 setAddresses(prev => prev.filter(a => a._id !== deleteId));
             }
+
         } catch (error) {
             toast.error(error.message);
+        } finally {
+            setDeleteLoading(null);
+            setShowConfirm(false);
         }
-        setShowConfirm(false);
+
     };
 
     /* ================= User se Location lo ================= */
@@ -3006,7 +3030,35 @@ const Cart = () => {
     /* ================= UI (UNCHANGED) ================= */
     return (
         <>
-            <div className="flex flex-col md:flex-row mt-16 gap-10">
+
+            {cartAmount > 0 && cartAmount < freeDeliveryTarget && (
+                <div className="mt-4 mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-2 rounded-lg flex items-center justify-center gap-2">
+
+                    <span>🚚</span>
+
+                    <span>
+                        Add <b>{currency}{remainingForFreeDelivery}</b> more to get
+                        <b className="text-green-600"> FREE delivery</b>
+                    </span>
+
+                </div>
+            )}
+
+
+            {cartAmount >= freeDeliveryTarget && (
+                <div className="mt-4 mb-4 bg-green-100 border border-green-300 text-green-800 text-sm px-4 py-2 rounded-lg flex items-center justify-center gap-2">
+
+                    <span>🎉</span>
+
+                    <span>
+                        You unlocked <b>FREE delivery</b>
+                    </span>
+
+                </div>
+            )}
+
+
+            <div className="flex flex-col md:flex-row mt-12 gap-10">
 
                 {/* LEFT */}
                 <div className="flex-1 max-w-4xl">
@@ -3186,20 +3238,30 @@ const Cart = () => {
                                         {!a.isDefault && (
                                             <button
                                                 onClick={() => setDefaultAddress(a._id)}
-                                                className="text-xs text-blue-600"
+                                                disabled={defaultLoading === a._id}
+                                                className="text-xs text-blue-600 flex items-center justify-center min-w-[80px]"
                                             >
-                                                Set Default
+                                                {defaultLoading === a._id ? (
+                                                    <span className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                                                ) : (
+                                                    "Set Default"
+                                                )}
                                             </button>
                                         )}
 
                                         <button
+                                            disabled={deleteLoading === a._id}
                                             onClick={() => {
-                                                setDeleteId(a._id)
-                                                setShowConfirm(true)
+                                                setDeleteId(a._id);
+                                                setShowConfirm(true);
                                             }}
-                                            className="text-xs text-red-500"
+                                            className="text-xs text-red-500 inline-flex items-center gap-1 min-w-[55px]"
                                         >
-                                            Delete
+                                            {deleteLoading === a._id ? (
+                                                <span className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></span>
+                                            ) : (
+                                                "Delete"
+                                            )}
                                         </button>
 
                                     </div>
