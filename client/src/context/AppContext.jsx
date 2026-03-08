@@ -211,6 +211,57 @@ export const AppContext = createContext();
 
 export const AppContextProvider = ({ children }) => {
 
+    const requestLocation = () => {
+
+        if (!navigator.geolocation) {
+            setLocationBlocked(true);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            (position) => {
+
+                if (position.coords.accuracy > 100) return;
+
+                const location = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    time: Date.now()
+                };
+
+                setLocationBlocked(false); // ⭐ important
+
+                setUserLocation(location);
+                localStorage.setItem("userLocation", JSON.stringify(location));
+
+            },
+
+            (error) => {
+
+                if (error.code === 1) {
+                    setLocationBlocked(true);
+                }
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 60000
+            }
+        );
+    };
+
+
+
+
+
+
+
+
+
+
     const currency = import.meta.env.VITE_CURRENCY;
     const navigate = useNavigate();
 
@@ -221,12 +272,26 @@ export const AppContextProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
 
     const [userLocation, setUserLocation] = useState(() => {
+
         try {
-            const saved = localStorage.getItem("userLocation");
-            return saved ? JSON.parse(saved) : null;
+
+            const saved = JSON.parse(localStorage.getItem("userLocation"));
+
+            if (!saved) return null;
+
+            // 15 min cache
+            if (Date.now() - saved.time > 900000) {
+                return null;
+            }
+
+            return saved;
+
         } catch {
+
             return null;
+
         }
+
     });
 
     const [locationBlocked, setLocationBlocked] = useState(false);
@@ -260,40 +325,11 @@ export const AppContextProvider = ({ children }) => {
     };
 
 
-    // ==============================
-    // LOCATION PERMISSION CHECK
-    // ==============================
-    const checkLocationPermission = async () => {
 
-        if (!navigator.geolocation) {
-            console.log("Geolocation not supported");
-            return;
-        }
 
-        try {
 
-            const permission = await navigator.permissions.query({
-                name: "geolocation"
-            });
 
-            if (permission.state === "granted") {
 
-                getUserLocation();
-
-            } else if (permission.state === "prompt") {
-
-                getUserLocation();
-
-            } else if (permission.state === "denied") {
-
-                setLocationBlocked(true);
-
-            }
-
-        } catch {
-            getUserLocation();
-        }
-    };
 
 
     const getUserLocation = () => {
@@ -388,16 +424,26 @@ export const AppContextProvider = ({ children }) => {
     // Initial Load
     // ==============================
     useEffect(() => {
+
         fetchUser();
         fetchSeller();
         fetchProducts();
-        checkLocationPermission();
+
+        if (!userLocation) {
+            requestLocation();
+        }
+
     }, []);
 
     useEffect(() => {
 
         const handleFocus = () => {
+
             fetchProducts();
+
+            // refresh location when user returns
+            requestLocation();
+
         };
 
         window.addEventListener("focus", handleFocus);
@@ -414,57 +460,43 @@ export const AppContextProvider = ({ children }) => {
 
 
 
+    useEffect(() => {
+
+        const interval = setInterval(() => {
+
+            if (document.visibilityState === "visible") {
+                requestLocation();
+            }
+
+        }, 600000);
+
+        return () => clearInterval(interval);
+
+    }, []);
+
 
 
     useEffect(() => {
 
-    const refreshLocation = () => {
+        if (!navigator.permissions) return;
 
-        if (!navigator.geolocation) return;
+        navigator.permissions.query({ name: "geolocation" }).then(permission => {
 
-        navigator.geolocation.getCurrentPosition(
+            permission.onchange = () => {
 
-            (position) => {
+                if (permission.state === "granted") {
+                    requestLocation();
+                }
 
-                const location = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
+                if (permission.state === "denied") {
+                    setLocationBlocked(true);
+                }
 
-                setUserLocation(location);
-                localStorage.setItem("userLocation", JSON.stringify(location));
+            };
 
-                console.log("Location refreshed:", location);
+        });
 
-            },
-
-            () => { },
-
-            {
-                enableHighAccuracy: true,
-                timeout: 4000,
-                maximumAge: 0
-            }
-
-        );
-
-    };
-
-    // first run
-    refreshLocation();
-
-    // refresh every 5 min
-    const interval = setInterval(refreshLocation, 300000);
-
-    return () => clearInterval(interval);
-
-}, []);
-
-
-
-
-
-
+    }, []);
 
 
 
@@ -593,7 +625,8 @@ export const AppContextProvider = ({ children }) => {
         userLocation,
         setUserLocation,
         getUserLocation,
-        locationBlocked
+        locationBlocked,
+        requestLocation
     };
 
     return (
