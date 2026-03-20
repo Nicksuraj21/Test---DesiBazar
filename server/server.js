@@ -531,7 +531,8 @@ app.post(
         });
 
         if (order) {
-          order.paymentStatus = "Refund Completed";
+          // Must match Order model enum + frontend expects "Refunded"
+          order.paymentStatus = "Refunded";
           await order.save();
           console.log("✅ Refund Completed Updated");
         }

@@ -304,6 +304,8 @@ const Cart = () => {
                 name: "DesiBazar",
                 description: "Order Payment",
                 method: {
+                    // Use Razorpay default UPI flow (mobile web intent-based when supported).
+                    // This avoids Android "complete action using Chrome" chooser in many cases.
                     upi: true,
                     card: false,
                     netbanking: false,
@@ -732,7 +734,7 @@ const Cart = () => {
                         className="w-full border border-gray-200 rounded px-3 py-2 mt-1 text-sm outline-none"
                     >
                         <option value="COD">Cash On Delivery</option>
-                        <option value="UPI">UPI (Razorpay)</option>
+                        <option value="UPI">UPI - Online</option>
                     </select>
 
                     <div className="flex gap-2 mt-4">
