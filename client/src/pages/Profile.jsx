@@ -111,30 +111,38 @@ const Profile = () => {
         <div className="w-16 h-0.5 bg-primary rounded-full" />
       </div>
 
-      <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full text-left">
-        <div>
-          <p className="text-sm font-semibold text-amber-900">Reward points</p>
-          <p className="text-xs text-amber-800/80 mt-0.5">
-            1 point = ₹1 off
-          </p>
-        </div>
-        <div className="sm:ml-auto flex items-center gap-2">
-          <p className="text-2xl font-bold text-amber-900 tabular-nums min-w-[110px] h-9 flex items-center justify-end leading-none">
-            {rewardPts} pts
-          </p>
-          <button
-            type="button"
-            onClick={toggleRewardTransactions}
-            className={`px-3 py-2 rounded-lg text-xs font-semibold border transition ${
-              showRewardTx
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-amber-300 bg-white text-amber-900 hover:bg-amber-50"
-            }`}
-          >
-            {showRewardTx ? "Hide history" : "History"}
-          </button>
-        </div>
-      </div>
+    <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center gap-3 w-full text-left">
+  
+  {/* Left Content */}
+  <div>
+    <p className="text-sm font-semibold text-amber-900">Reward points</p>
+    <p className="text-xs text-amber-800/80 mt-0.5">
+      1 point = ₹1 off
+    </p>
+  </div>
+
+  {/* Right Section */}
+  <div className="flex items-center justify-between sm:justify-end sm:ml-auto gap-4 w-full sm:w-auto">
+    
+    {/* Points */}
+    <p className="text-2xl font-bold text-amber-900 tabular-nums h-9 flex items-center leading-none">
+      {rewardPts} pts
+    </p>
+
+    {/* Button */}
+    <button
+      type="button"
+      onClick={toggleRewardTransactions}
+      className={`px-3 py-2 rounded-lg text-xs font-semibold border transition ${
+        showRewardTx
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-amber-300 bg-white text-amber-900 hover:bg-amber-50"
+      }`}
+    >
+      {showRewardTx ? "Hide history" : "History"}
+    </button>
+  </div>
+</div>
 
       {showRewardTx && (
         <div className="mb-6 border border-amber-200 rounded-xl bg-white overflow-hidden">
