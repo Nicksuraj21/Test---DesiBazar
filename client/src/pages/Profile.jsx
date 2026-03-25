@@ -11,6 +11,9 @@ const Profile = () => {
   const { user, setUser, axios, navigate, setShowUserLogin } = useAppContext();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showAddresses, setShowAddresses] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [addrLoading, setAddrLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -22,6 +25,24 @@ const Profile = () => {
   useEffect(() => {
     if (user?.name) setName(user.name);
   }, [user]);
+
+  const loadAddresses = async () => {
+    setAddrLoading(true);
+    try {
+      const { data } = await axios.get("/api/address/get");
+      if (data.success) setAddresses(data.addresses || []);
+    } catch (err) {
+      toast.error(err.message || "Could not load addresses");
+    } finally {
+      setAddrLoading(false);
+    }
+  };
+
+  const toggleAddresses = () => {
+    const next = !showAddresses;
+    setShowAddresses(next);
+    if (next) loadAddresses();
+  };
 
   if (!user) return null;
 
@@ -65,7 +86,7 @@ const Profile = () => {
         <div>
           <p className="text-sm font-semibold text-amber-900">Reward points</p>
           <p className="text-xs text-amber-800/80 mt-0.5">
-            1 point = ₹1 off · Order points: 1 per ₹50 spent, valid 1 year · Admin bonus expires in 10 days
+            1 point = ₹1 off · Order points: 2 per ₹100 spent, valid 1 year · Company bonus expires in 10 days
           </p>
         </div>
         <p className="text-2xl font-bold text-amber-900 tabular-nums">{rewardPts} pts</p>
@@ -115,19 +136,61 @@ const Profile = () => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-          <Link
-            to="/my-orders"
-            className="text-center px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            My orders
-          </Link>
-          <Link
-            to="/add-address"
-            className="text-center px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Addresses
-          </Link>
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/my-orders"
+              className="text-center px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              My orders
+            </Link>
+            <button
+              type="button"
+              onClick={toggleAddresses}
+              className={`text-center px-4 py-2.5 border rounded-full text-sm font-medium transition ${
+                showAddresses
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Addresses
+            </button>
+          </div>
+
+          {showAddresses && (
+            <div className="mt-4 border border-gray-200 rounded-xl bg-gray-50/80 overflow-hidden">
+              {addrLoading ? (
+                <p className="text-sm text-gray-500 px-4 py-6 text-center">Loading addresses…</p>
+              ) : addresses.length === 0 ? (
+                <p className="text-sm text-gray-500 px-4 py-4">No saved addresses yet.</p>
+              ) : (
+                <ul className="divide-y divide-gray-200">
+                  {addresses.map((a) => (
+                    <li key={a._id} className="px-4 py-3 bg-white">
+                      <p className="text-sm font-medium text-gray-800">
+                        {a.firstName} {a.lastName}
+                        {a.isDefault && (
+                          <span className="ml-2 text-xs font-semibold text-green-600">Default</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-0.5">
+                        {a.street}, {a.city}, {a.state} — {a.zipcode}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">+91 {a.phone}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="p-3 border-t border-gray-200 bg-white">
+                <Link
+                  to="/add-address"
+                  className="block w-full text-center px-4 py-2.5 text-sm font-medium text-primary bg-primary/9 hover:bg-primary/14 rounded-lg transition"
+                >
+                  + Add address
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

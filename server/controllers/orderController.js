@@ -2430,7 +2430,8 @@ export const placeOrderCOD = async (req, res) => {
             success: true,
             message: "Order Placed Successfully",
             orderId: order._id,
-            rewardPoints: pointsAfter.rewardPoints ?? 0
+            rewardPoints: pointsAfter.rewardPoints ?? 0,
+            pointsEarned: earned
         });
 
     } catch (error) {

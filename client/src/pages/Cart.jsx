@@ -51,6 +51,20 @@ const Cart = () => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
 
+    /** After successful order: show points popup (COD + UPI) */
+    const [orderSuccessModal, setOrderSuccessModal] = useState(null);
+
+    const openOrderPlacedModal = (payload) => {
+        const pe = typeof payload?.pointsEarned === "number" ? payload.pointsEarned : 0;
+        const rp = typeof payload?.rewardPoints === "number" ? payload.rewardPoints : 0;
+        setOrderSuccessModal({ pointsEarned: pe, rewardPoints: rp });
+    };
+
+    const closeOrderPlacedModal = () => {
+        setOrderSuccessModal(null);
+        navigate("/my-orders");
+    };
+
     /* ================= COUPON ================= */
     useEffect(() => {
         if (!coupon) return;
@@ -389,12 +403,11 @@ const Cart = () => {
                         );
 
                         if (verify.data.success) {
-                            toast.success("Payment Successful 🎉");
                             setCartItems({});
                             if (typeof verify.data.rewardPoints === "number" && user) {
                                 setUser({ ...user, rewardPoints: verify.data.rewardPoints });
                             }
-                            navigate("/my-orders");
+                            openOrderPlacedModal(verify.data);
                         } else {
                             toast.error("Payment verification failed");
                         }
@@ -501,7 +514,6 @@ const Cart = () => {
                     if (typeof data.rewardPoints === "number" && user) {
                         setUser({ ...user, rewardPoints: data.rewardPoints });
                     }
-                    toast.success("Order placed successfully");
 
                     const orderId = data.orderId;
 
@@ -514,7 +526,7 @@ const Cart = () => {
                         })
                         .catch(() => { });
 
-                    navigate("/my-orders");
+                    openOrderPlacedModal(data);
                 }
 
             } else {
@@ -853,7 +865,7 @@ const Cart = () => {
                                 <span className="text-gray-500"> (1 pt = {currency}1 off)</span>
                             </p>
                             <p className="text-xs text-green-700 mb-2">
-                                Earn <span className="font-semibold">{pointsEarnedPreview}</span> pts on this order (₹50 = 1 pt, valid 1 year)
+                                Earn <span className="font-semibold">{pointsEarnedPreview}</span> pts on this order (₹100 = 2 pt, valid 1 year)
                             </p>
                             <div className="flex gap-2 items-center flex-wrap">
                                 <input
@@ -934,6 +946,48 @@ const Cart = () => {
                     onConfirm={confirmDeleteAddress}
                     onCancel={() => setShowConfirm(false)}
                 />
+            )}
+
+            {orderSuccessModal && (
+                <div
+                    className="fixed inset-0 bg-black/45 flex items-center justify-center z-[60] p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="order-success-title"
+                >
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center border border-amber-100">
+                        <p className="text-4xl mb-2" aria-hidden>🎉</p>
+                        <h2 id="order-success-title" className="text-lg font-semibold text-gray-900">
+                            Order placed successfully
+                        </h2>
+                        {orderSuccessModal.pointsEarned > 0 ? (
+                            <p className="text-sm text-gray-700 mt-3 leading-relaxed">
+                                You earned{" "}
+                                <span className="font-bold text-amber-700 tabular-nums">
+                                    {orderSuccessModal.pointsEarned}
+                                </span>{" "}
+                                reward points on this order.
+                            </p>
+                        ) : (
+                            <p className="text-sm text-gray-600 mt-3">
+                                Thank you for shopping with us.
+                            </p>
+                        )}
+                        <p className="text-sm text-gray-600 mt-2">
+                            Your total reward points:{" "}
+                            <span className="font-semibold text-gray-800 tabular-nums">
+                                {orderSuccessModal.rewardPoints}
+                            </span>
+                        </p>
+                        <button
+                            type="button"
+                            onClick={closeOrderPlacedModal}
+                            className="w-full mt-6 py-3 rounded-full bg-primary text-white text-sm font-medium hover:opacity-95 transition"
+                        >
+                            View my orders
+                        </button>
+                    </div>
+                </div>
             )}
 
         </>

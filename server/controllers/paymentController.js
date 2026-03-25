@@ -729,7 +729,8 @@ export const verifyUpiPayment = async (req, res) => {
       const u = await User.findById(orderBefore.userId).select("rewardPoints").lean();
       return res.json({
         success: true,
-        rewardPoints: u?.rewardPoints ?? 0
+        rewardPoints: u?.rewardPoints ?? 0,
+        pointsEarned: 0
       });
     }
 
@@ -773,7 +774,8 @@ export const verifyUpiPayment = async (req, res) => {
 
     return res.json({
       success: true,
-      rewardPoints: pointsAfter.rewardPoints ?? 0
+      rewardPoints: pointsAfter.rewardPoints ?? 0,
+      pointsEarned: earned
     });
 
   } catch (error) {
