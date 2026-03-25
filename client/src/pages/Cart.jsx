@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
@@ -38,6 +38,8 @@ const Cart = () => {
     // ✅ NEW STATE (ONLY ADDITION)
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [isLocating, setIsLocating] = useState(false); // 👈 ADD THIS
+    const [isLiveSharing, setIsLiveSharing] = useState(false);
+    const liveWatchIdRef = useRef(null);
 
     const cartAmount = getCartAmount();
     const deliveryCharge = cartAmount < 100 && cartAmount > 0 ? 40 : 0;
@@ -168,31 +170,71 @@ const Cart = () => {
 
     };
 
-    /* ================= User se Location lo ================= */
-    const getCurrentLocation = () => {
+    /* ================= Share live location (watchPosition) ================= */
+    const toggleLiveLocation = () => {
+        if (liveWatchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(liveWatchIdRef.current);
+            liveWatchIdRef.current = null;
+            setIsLiveSharing(false);
+            setIsLocating(false);
+            toast("Live location sharing stopped");
+            return;
+        }
+
+        if (!user) {
+            toast.error("Please login first");
+            setShowUserLogin(true);
+            return;
+        }
+
         if (!navigator.geolocation) {
             toast.error("Location not supported");
             return;
         }
 
-        setIsLocating(true); // 🔄 loader start
+        setIsLocating(true);
 
-        navigator.geolocation.getCurrentPosition(
+        liveWatchIdRef.current = navigator.geolocation.watchPosition(
             (position) => {
-                setUserLocation({
+                const loc = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
-                });
-
-                toast.success("Location captured 📍");
-                setIsLocating(false); // 🛑 loader stop
+                };
+                setUserLocation(loc);
+                localStorage.setItem("userLocation", JSON.stringify(loc));
+                setIsLocating(false);
+                setIsLiveSharing(true);
             },
-            () => {
-                toast.error("Location permission denied");
-                setIsLocating(false); // 🛑 loader stop
+            (error) => {
+                setIsLocating(false);
+                setIsLiveSharing(false);
+                if (liveWatchIdRef.current !== null) {
+                    navigator.geolocation.clearWatch(liveWatchIdRef.current);
+                    liveWatchIdRef.current = null;
+                }
+                if (error.code === 1) {
+                    toast.error("Location permission denied");
+                } else {
+                    toast.error("Unable to fetch live location");
+                }
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0
             }
         );
+
+        toast.success("Live location sharing started");
     };
+
+    useEffect(() => {
+        return () => {
+            if (liveWatchIdRef.current !== null) {
+                navigator.geolocation.clearWatch(liveWatchIdRef.current);
+                liveWatchIdRef.current = null;
+            }
+        };
+    }, []);
 
 
     /* ================= Fresh Location Before Order ================= */
@@ -610,10 +652,28 @@ const Cart = () => {
                                 : "No address selected"}
                         </p>
 
-                        <div className="flex gap-2 mt-3">
-                            {/* CHANGE BUTTON */}
+                        <div className="flex flex-col gap-1.5 mt-2">
+                            <button
+                                type="button"
+                                onClick={toggleLiveLocation}
+                                disabled={isLocating && !isLiveSharing}
+                                className={`w-full text-xs px-2.5 py-1.5 rounded-md border-2 font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm ${isLiveSharing
+                                    ? "border-green-700 bg-green-600 text-white hover:bg-green-700"
+                                    : "border-green-600 bg-green-50 text-green-800 hover:bg-green-100"
+                                    }`}
+                            >
+                                {isLocating && !isLiveSharing && (
+                                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin shrink-0" />
+                                )}
+                                {isLocating && !isLiveSharing
+                                    ? "Getting location..."
+                                    : isLiveSharing
+                                        ? "Stop sharing live location"
+                                        : "Share live location"}
+                            </button>
 
                             <button
+                                type="button"
                                 onClick={() => {
                                     if (!user) {
                                         toast.error("Please login first");
@@ -622,33 +682,19 @@ const Cart = () => {
                                     }
                                     setShowAddress(!showAddress);
                                 }}
-
-                                className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium"
+                                className="w-full text-xs px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium text-center"
                             >
                                 Add Address & Change
                             </button>
-
-
-                            {/* <button
-                                onClick={getCurrentLocation}
-                                disabled={isLocating}
-                                className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition font-medium flex items-center gap-2 disabled:opacity-60"
-                            >
-                                {isLocating && (
-                                    <span className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></span>
-                                )}
-
-                                {isLocating ? "Getting location..." : "📍 Share Current Location"}
-                            </button> */}
-
                         </div>
                     </div>
 
-                    {/* {userLocation && (
-                        <p className="text-green-600 text-xs mt-1">
-                            Location added successfully
+                    {isLiveSharing && userLocation && (
+                        <p className="text-green-600 text-xs mt-2 flex items-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" aria-hidden />
+                            Live location on — used for delivery
                         </p>
-                    )} */}
+                    )}
 
 
                     {showAddress && (

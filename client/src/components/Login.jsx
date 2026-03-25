@@ -663,7 +663,8 @@ const Login = () => {
         }
     };
 
-    // GOOGLE LOGIN
+    // GOOGLE LOGIN (popup "One moment please" / gsi/transform = Google's own UI; cannot be removed.
+    // use_fedcm_for_button uses browser FedCM on supported Chrome → often skips that extra popup.)
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             setLoading(true);
@@ -685,7 +686,7 @@ const Login = () => {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     return (
         <div
@@ -776,6 +777,7 @@ const Login = () => {
                     <GoogleLogin
                         onSuccess={handleGoogleSuccess}
                         onError={() => toast.error("Google Login Failed")}
+                        use_fedcm_for_button
                     />
                 </div>
 
