@@ -657,7 +657,7 @@ const Cart = () => {
                                 type="button"
                                 onClick={toggleLiveLocation}
                                 disabled={isLocating && !isLiveSharing}
-                                className={`w-full text-xs px-2.5 py-1.5 rounded-md border-2 font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm ${isLiveSharing
+                                className={`w-full text-xs px-2.5 py-1.5 rounded-md border-1 font-semibold transition flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm ${isLiveSharing
                                     ? "border-green-700 bg-green-600 text-white hover:bg-green-700"
                                     : "border-green-600 bg-green-50 text-green-800 hover:bg-green-100"
                                     }`}
