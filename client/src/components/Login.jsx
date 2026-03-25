@@ -622,6 +622,17 @@ const Login = () => {
     const [password, setPassword] = React.useState("");
     const [loading, setLoading] = React.useState(false);
 
+    // Login/Register response me `rewardPoints` missing ho sakta hai.
+    // isliye turant `/api/user/is-auth` se fresh user fetch karke UI update karte hain.
+    const refreshAuthedUser = async () => {
+        try {
+            const { data } = await axios.get("/api/user/is-auth");
+            if (data?.success && data.user) setUser(data.user);
+        } catch {
+            // Fallback: atleast `data.user` (name/email) already show hoga.
+        }
+    };
+
     // LOGIN / SIGNUP SUBMIT
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -645,6 +656,7 @@ const Login = () => {
                 setUser(data.user);
                 setShowUserLogin(false);
                 toast.success(isSignup ? "Account Created" : "Login Success");
+                await refreshAuthedUser();
             } else {
 
                 // 🔥 AUTO SWITCH TO SIGNUP
@@ -657,7 +669,7 @@ const Login = () => {
             }
 
         } catch (error) {
-            toast.error("Something went wrong");
+            toast.error(error?.message || "Something went wrong");
         } finally {
             setLoading(false);
         }
@@ -677,12 +689,13 @@ const Login = () => {
                 setUser(data.user);
                 setShowUserLogin(false);
                 toast.success("Google Login Success");
+                await refreshAuthedUser();
             } else {
                 toast.error(data.message);
             }
 
         } catch (error) {
-            toast.error("Google Login Failed");
+            toast.error(error?.message || "Google Login Failed");
         } finally {
             setLoading(false);
         }

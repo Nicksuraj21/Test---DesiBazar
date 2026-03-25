@@ -409,6 +409,31 @@ export const AppContextProvider = ({ children }) => {
     };
 
     // ==============================
+    // 🔥 Instant reward sync (no refresh)
+    // ==============================
+    const syncUserFromServer = async () => {
+        try {
+            const { data } = await axios.get('/api/user/is-auth');
+
+            if (!data?.success || !data.user) return;
+
+            setUser(data.user);
+
+            // Keep cart in sync with server (used during reward checks too)
+            const dbCart = data.user.cartItems || {};
+            setCartItems(prev => {
+                const merged = { ...prev };
+                for (const id in dbCart) {
+                    merged[id] = Math.max(dbCart[id], prev[id] || 0);
+                }
+                return merged;
+            });
+        } catch {
+            // Silent fail: auth cookie invalid/expired ho sakti hai
+        }
+    };
+
+    // ==============================
     // Fetch Products
     // ==============================
     const fetchProducts = async () => {
@@ -440,6 +465,9 @@ export const AppContextProvider = ({ children }) => {
         const handleFocus = () => {
 
             fetchProducts();
+
+            // 🔥 points/rewards instant sync when user returns
+            syncUserFromServer();
 
             // refresh location when user returns
             requestLocation();
@@ -475,6 +503,20 @@ export const AppContextProvider = ({ children }) => {
     }, []);
 
 
+    // ==============================
+    // 🔄 Reward points auto-update
+    // ==============================
+    useEffect(() => {
+        if (!user) return;
+
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                syncUserFromServer();
+            }
+        }, 60000); // 60s
+
+        return () => clearInterval(interval);
+    }, [user]);
 
     useEffect(() => {
 
