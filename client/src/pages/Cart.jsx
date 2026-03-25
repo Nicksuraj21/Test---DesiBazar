@@ -17,6 +17,7 @@ const Cart = () => {
         getCartAmount,
         axios,
         user,
+        setUser,
         setCartItems,
         setShowUserLogin   // 👈 ADD THIS
     } = useAppContext();
@@ -43,6 +44,8 @@ const Cart = () => {
 
     const cartAmount = getCartAmount();
     const deliveryCharge = cartAmount < 100 && cartAmount > 0 ? 40 : 0;
+
+    const [redeemPointsInput, setRedeemPointsInput] = useState(0);
 
     // ✅ Custom confirm)
     const [showConfirm, setShowConfirm] = useState(false);
@@ -78,10 +81,19 @@ const Cart = () => {
         toast("Coupon removed");
     };
 
-    const finalTotal = cartAmount + deliveryCharge - discount;
+    const grossBeforeRedeem = cartAmount + deliveryCharge - discount;
+    const rewardBalance = Math.floor(user?.rewardPoints ?? 0);
+    const maxRedeem = user ? Math.min(rewardBalance, Math.max(0, grossBeforeRedeem)) : 0;
+    const appliedRedeem = Math.min(Math.max(0, Math.floor(Number(redeemPointsInput) || 0)), maxRedeem);
+    const finalTotal = grossBeforeRedeem - appliedRedeem;
+    const pointsEarnedPreview = Math.floor(finalTotal / 50);
 
     const freeDeliveryTarget = 100;
     const remainingForFreeDelivery = freeDeliveryTarget - cartAmount;
+
+    useEffect(() => {
+        setRedeemPointsInput((prev) => Math.min(Math.max(0, prev), maxRedeem));
+    }, [maxRedeem]);
 
     /* ================= CART ================= */
     const getCart = () => {
@@ -314,6 +326,11 @@ const Cart = () => {
             return;
         }
 
+        if (finalTotal < 1) {
+            toast.error("UPI payment needs at least ₹1 after rewards. Use Cash on Delivery or fewer points.");
+            return;
+        }
+
         try {
 
             // const location = await requestLocationBeforeOrder();
@@ -322,13 +339,13 @@ const Cart = () => {
             const { data } = await axios.post(
                 "/api/payment/create-upi-order",
                 {
-                    userId: user._id,
                     items: cartArray.map(item => ({
                         product: item._id,
                         quantity: item.quantity
                     })),
                     address: selectedAddress._id,
-                    coupon
+                    coupon,
+                    rewardPointsToRedeem: appliedRedeem
                 },
                 { withCredentials: true }
             );
@@ -374,6 +391,9 @@ const Cart = () => {
                         if (verify.data.success) {
                             toast.success("Payment Successful 🎉");
                             setCartItems({});
+                            if (typeof verify.data.rewardPoints === "number" && user) {
+                                setUser({ ...user, rewardPoints: verify.data.rewardPoints });
+                            }
                             navigate("/my-orders");
                         } else {
                             toast.error("Payment verification failed");
@@ -471,12 +491,16 @@ const Cart = () => {
                     })),
                     address: selectedAddress._id,
                     coupon,
-                    location
+                    location,
+                    rewardPointsToRedeem: appliedRedeem
                 });
 
                 if (data.success) {
 
                     setCartItems({});
+                    if (typeof data.rewardPoints === "number" && user) {
+                        setUser({ ...user, rewardPoints: data.rewardPoints });
+                    }
                     toast.success("Order placed successfully");
 
                     const orderId = data.orderId;
@@ -810,11 +834,55 @@ const Cart = () => {
                                 <span>Discount</span><span>-{currency}{discount}</span>
                             </p>
                         )}
+                        {appliedRedeem > 0 && (
+                            <p className="flex justify-between text-amber-700">
+                                <span>Reward points ({appliedRedeem} pts)</span>
+                                <span>-{currency}{appliedRedeem}</span>
+                            </p>
+                        )}
                         <p className="flex justify-between font-semibold text-base pt-2">
                             <span>Total</span><span>{currency}{finalTotal}</span>
                         </p>
                     </div>
 
+                    {user && cartArray.length > 0 && (
+                        <div className="mt-4 p-3 rounded-lg border border-amber-200 bg-amber-50/80 text-sm">
+                            <p className="font-medium text-gray-800 mb-1">Reward points</p>
+                            <p className="text-gray-600 text-xs mb-2">
+                                Balance: <span className="font-semibold text-amber-800">{rewardBalance}</span> pts
+                                <span className="text-gray-500"> (1 pt = {currency}1 off)</span>
+                            </p>
+                            <p className="text-xs text-green-700 mb-2">
+                                Earn <span className="font-semibold">{pointsEarnedPreview}</span> pts on this order (₹50 = 1 pt, valid 1 year)
+                            </p>
+                            <div className="flex gap-2 items-center flex-wrap">
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={maxRedeem}
+                                    value={redeemPointsInput}
+                                    onChange={(e) => {
+                                        const n = Math.floor(Number(e.target.value));
+                                        if (Number.isNaN(n)) {
+                                            setRedeemPointsInput(0);
+                                            return;
+                                        }
+                                        setRedeemPointsInput(Math.min(Math.max(0, n), maxRedeem));
+                                    }}
+                                    placeholder="0"
+                                    className="border border-amber-300 rounded px-2 py-1.5 w-28 text-sm outline-none bg-white"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setRedeemPointsInput(maxRedeem)}
+                                    disabled={maxRedeem === 0}
+                                    className="text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-900 font-medium disabled:opacity-40"
+                                >
+                                    Use max ({maxRedeem})
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* FREE DELIVERY MESSAGE */}
 
@@ -833,9 +901,19 @@ const Cart = () => {
 
 
 
+                    {paymentOption === "UPI" && finalTotal < 1 && cartArray.length > 0 && (
+                        <p className="text-xs text-red-600 mt-3 text-center">
+                            UPI needs at least ₹1 payable. Use COD for ₹0 total or reduce reward use.
+                        </p>
+                    )}
+
                     <button
                         onClick={placeOrder}
-                        disabled={isPlacingOrder || cartArray.length === 0}
+                        disabled={
+                            isPlacingOrder ||
+                            cartArray.length === 0 ||
+                            (paymentOption === "UPI" && finalTotal < 1)
+                        }
                         className="w-full py-3 mt-6 bg-primary text-white rounded-lg font-medium hover:bg-primary-dull transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {cartArray.length === 0

@@ -2180,6 +2180,16 @@ import User from "../models/User.js";
 import razorpay from "../configs/razorpay.js";
 import axios from "axios";
 import Address from "../models/Address.js";
+import {
+    computeAuthorizedRedeem,
+    pointsEarnedFromPurchase,
+    applyRewardPointsChange
+} from "../utils/rewardPoints.js";
+import {
+    migrateLegacyRewardPoints,
+    pruneExpiredGrants,
+    sumGrants
+} from "../utils/rewardGrants.js";
 
 
 // ==============================
@@ -2280,7 +2290,7 @@ export const placeOrderCOD = async (req, res) => {
             });
         }
 
-        const { items, address: addressId, coupon, location } = req.body;
+        const { items, address: addressId, coupon, location, rewardPointsToRedeem: redeemRaw } = req.body;
 
         // ==============================
         // DUPLICATE ORDER PROTECTION
@@ -2346,14 +2356,20 @@ export const placeOrderCOD = async (req, res) => {
 
         for (const item of items) {
             const product = await Product.findById(item.product);
-            if (!product) continue;
+            if (!product) {
+                return res.json({
+                    success: false,
+                    message: "Invalid or removed product in cart — refresh and try again"
+                });
+            }
 
+            const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
             const price = product.offerPrice;
-            subtotal += price * item.quantity;
+            subtotal += price * qty;
 
             itemsWithPrice.push({
                 product: item.product,
-                quantity: item.quantity,
+                quantity: qty,
                 price: price
             });
         }
@@ -2369,7 +2385,14 @@ export const placeOrderCOD = async (req, res) => {
             }
         }
 
-        const amount = subtotal + deliveryCharge - discount;
+        const grossAmount = subtotal + deliveryCharge - discount;
+
+        const userDoc = await User.findById(userId).select("rewardPoints rewardGrants");
+        migrateLegacyRewardPoints(userDoc);
+        const balance = sumGrants(pruneExpiredGrants(userDoc.rewardGrants || []));
+        const redeem = computeAuthorizedRedeem(redeemRaw, balance, grossAmount);
+        const finalAmount = grossAmount - redeem;
+        const earned = pointsEarnedFromPurchase(finalAmount);
 
         const order = await Order.create({
             userId,
@@ -2378,12 +2401,23 @@ export const placeOrderCOD = async (req, res) => {
             deliveryCharge,
             tax: 0,
             discount,
-            amount,
+            rewardPointsUsed: redeem,
+            amount: finalAmount,
             address: addressData,
             paymentType: "COD",
             status: "Order Placed",
             location: location ?? null
         });
+
+        const pointsAfter = await applyRewardPointsChange(User, userId, redeem, earned);
+
+        if (!pointsAfter) {
+            await Order.findByIdAndDelete(order._id);
+            return res.json({
+                success: false,
+                message: "Could not apply reward points. Refresh and try again."
+            });
+        }
 
         const fullOrder = await Order.findById(order._id)
             .populate("items.product")
@@ -2395,7 +2429,8 @@ export const placeOrderCOD = async (req, res) => {
         return res.json({
             success: true,
             message: "Order Placed Successfully",
-            orderId: order._id
+            orderId: order._id,
+            rewardPoints: pointsAfter.rewardPoints ?? 0
         });
 
     } catch (error) {

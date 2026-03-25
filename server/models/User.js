@@ -47,6 +47,23 @@ const userSchema = new mongoose.Schema(
             type: Object,
             default: {},
         },
+
+        /** Sum of non-expired grant amounts (kept in sync with rewardGrants) */
+        rewardPoints: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        /** Ledger: admin grants expire in 10 days; order grants in 365 days */
+        rewardGrants: [
+            {
+                amount: { type: Number, required: true, min: 0 },
+                source: { type: String, enum: ["admin", "order"], required: true },
+                expiresAt: { type: Date, required: true },
+                createdAt: { type: Date, default: Date.now },
+            },
+        ],
     },
     { minimize: false, timestamps: true }
 );

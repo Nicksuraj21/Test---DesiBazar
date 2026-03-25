@@ -1,4 +1,14 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import User from "../models/User.js";
+import {
+    addAdminGrantToUser,
+    pruneAndPersistUserRewards,
+    ADMIN_REWARD_GRANT_DAYS,
+    removeRewardPointsFromUser
+} from "../utils/rewardGrants.js";
+
+const MAX_REWARD_POINTS_PER_REQUEST = 100000;
 
 // Login Seller : /api/seller/login
 
@@ -66,3 +76,145 @@ export const sellerLogout = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+// ==============================
+// ADMIN: lookup user for reward points
+// GET /api/seller/user-lookup?userId= | ?phone= | ?email=
+// ==============================
+export const lookupUserForRewards = async (req, res) => {
+    try {
+        const { userId, phone, email } = req.query;
+
+        if (userId && mongoose.Types.ObjectId.isValid(String(userId))) {
+            const user = await User.findById(userId).select("name phone email rewardPoints createdAt");
+            if (!user) {
+                return res.json({ success: false, message: "User not found" });
+            }
+            await pruneAndPersistUserRewards(User, user._id);
+            const fresh = await User.findById(user._id).select("name phone email rewardPoints createdAt");
+            return res.json({ success: true, user: fresh });
+        }
+
+        if (phone && String(phone).trim()) {
+            const digits = String(phone).replace(/\D/g, "");
+            const user = await User.findOne({
+                $or: [{ phone: String(phone).trim() }, { phone: digits }]
+            }).select("name phone email rewardPoints createdAt");
+            if (!user) {
+                return res.json({ success: false, message: "No user with this phone" });
+            }
+            await pruneAndPersistUserRewards(User, user._id);
+            const fresh = await User.findById(user._id).select("name phone email rewardPoints createdAt");
+            return res.json({ success: true, user: fresh });
+        }
+
+        if (email && String(email).trim()) {
+            const em = String(email).trim();
+            const user = await User.findOne({
+                email: { $regex: new RegExp(`^${em.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") }
+            }).select("name phone email rewardPoints createdAt");
+            if (!user) {
+                return res.json({ success: false, message: "No user with this email" });
+            }
+            await pruneAndPersistUserRewards(User, user._id);
+            const fresh = await User.findById(user._id).select("name phone email rewardPoints createdAt");
+            return res.json({ success: true, user: fresh });
+        }
+
+        return res.json({
+            success: false,
+            message: "Provide userId, phone, or email"
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
+// ==============================
+// ADMIN: add reward points to a user
+// POST /api/seller/add-reward-points { userId, points }
+// ==============================
+export const addUserRewardPoints = async (req, res) => {
+    try {
+        const { userId, points } = req.body;
+
+        if (!userId || !mongoose.Types.ObjectId.isValid(String(userId))) {
+            return res.json({ success: false, message: "Valid userId required" });
+        }
+
+        const p = Math.floor(Number(points));
+        if (!Number.isFinite(p) || p <= 0 || p > MAX_REWARD_POINTS_PER_REQUEST) {
+            return res.json({
+                success: false,
+                message: `Points must be between 1 and ${MAX_REWARD_POINTS_PER_REQUEST}`
+            });
+        }
+
+        const user = await addAdminGrantToUser(User, userId, p);
+
+        if (!user) {
+            return res.json({ success: false, message: "User not found or could not update" });
+        }
+
+        return res.json({
+            success: true,
+            message: `Added ${p} points — valid ${ADMIN_REWARD_GRANT_DAYS} days from now`,
+            user
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
+// ==============================
+// ADMIN: remove reward points from a user
+// POST /api/seller/remove-reward-points { userId, points }
+// ==============================
+export const removeUserRewardPoints = async (req, res) => {
+    try {
+        const { userId, points } = req.body;
+
+        if (!userId || !mongoose.Types.ObjectId.isValid(String(userId))) {
+            return res.json({ success: false, message: "Valid userId required" });
+        }
+
+        const p = Math.floor(Number(points));
+        if (!Number.isFinite(p) || p <= 0 || p > MAX_REWARD_POINTS_PER_REQUEST) {
+            return res.json({
+                success: false,
+                message: `Points must be between 1 and ${MAX_REWARD_POINTS_PER_REQUEST}`
+            });
+        }
+
+        const result = await removeRewardPointsFromUser(User, userId, p);
+
+        if (!result.ok) {
+            if (result.reason === "not_found") {
+                return res.json({ success: false, message: "User not found" });
+            }
+            if (result.reason === "no_balance") {
+                return res.json({ success: false, message: "User has no points to remove" });
+            }
+            if (result.reason === "invalid") {
+                return res.json({ success: false, message: "Invalid points amount" });
+            }
+            return res.json({ success: false, message: "Could not update. Try again." });
+        }
+
+        let msg = `Removed ${result.removed} points`;
+        if (result.capped) {
+            msg += " (only this many were available — rest of request ignored)";
+        }
+
+        return res.json({
+            success: true,
+            message: msg,
+            user: result.user
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};

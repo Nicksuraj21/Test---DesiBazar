@@ -865,6 +865,7 @@
 
 
 import User from "../models/User.js";
+import { pruneAndPersistUserRewards } from "../utils/rewardGrants.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
@@ -1135,6 +1136,8 @@ export const updateProfile = async (req, res) => {
       return res.json({ success: false, message: "Name required" });
     }
 
+    await pruneAndPersistUserRewards(User, req.userId);
+
     const user = await User.findByIdAndUpdate(
       req.userId,
       { name: String(name).trim() },
@@ -1156,6 +1159,7 @@ export const updateProfile = async (req, res) => {
 // ==============================
 export const isAuth = async (req, res) => {
   try {
+    await pruneAndPersistUserRewards(User, req.userId);
     const user = await User.findById(req.userId).select("-password");
     return res.json({ success: true, user });
   } catch (error) {

@@ -52,12 +52,23 @@ const Profile = () => {
   };
 
   const initial = (user.name || "U").charAt(0).toUpperCase();
+  const rewardPts = Math.floor(user.rewardPoints ?? 0);
 
   return (
     <div className="mt-16 pb-16 max-w-2xl">
       <div className="flex flex-col items-end w-max mb-8">
         <p className="text-2xl font-medium uppercase">My profile</p>
         <div className="w-16 h-0.5 bg-primary rounded-full" />
+      </div>
+
+      <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold text-amber-900">Reward points</p>
+          <p className="text-xs text-amber-800/80 mt-0.5">
+            1 point = ₹1 off · Order points: 1 per ₹50 spent, valid 1 year · Admin bonus expires in 10 days
+          </p>
+        </div>
+        <p className="text-2xl font-bold text-amber-900 tabular-nums">{rewardPts} pts</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">

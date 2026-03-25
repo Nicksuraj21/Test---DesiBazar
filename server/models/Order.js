@@ -115,6 +115,9 @@ const orderSchema = new mongoose.Schema({
     tax: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
 
+    /** Rupees covered by redeeming reward points (1 point = ₹1) */
+    rewardPointsUsed: { type: Number, default: 0 },
+
     amount: { type: Number, required: true },
     address: {
         firstName: String,

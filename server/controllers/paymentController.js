@@ -545,6 +545,17 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 import crypto from "crypto";
+import Address from "../models/Address.js";
+import {
+  computeAuthorizedRedeem,
+  pointsEarnedFromPurchase,
+  applyRewardPointsChange
+} from "../utils/rewardPoints.js";
+import {
+  migrateLegacyRewardPoints,
+  pruneExpiredGrants,
+  sumGrants
+} from "../utils/rewardGrants.js";
 
 // ==========================================
 // CREATE UPI ORDER
@@ -552,12 +563,9 @@ import crypto from "crypto";
 export const createUpiOrder = async (req, res) => {
   try {
 
-    // 🔥 VERY IMPORTANT
-    const userId = req.body.userId || req.userId;
+    const userId = req.userId;
 
-    console.log("USER FROM TOKEN:", userId); // debug
-
-    const { items, address, coupon, location } = req.body;
+    const { items, address: addressId, coupon, location, rewardPointsToRedeem: redeemRaw } = req.body;
 
     if (!userId) {
       return res.json({
@@ -566,12 +574,29 @@ export const createUpiOrder = async (req, res) => {
       });
     }
 
-    if (!address) {
+    if (!addressId) {
       return res.json({
         success: false,
         message: "Address required"
       });
     }
+
+    const addressDoc = await Address.findById(addressId);
+    if (!addressDoc) {
+      return res.json({
+        success: false,
+        message: "Address not found"
+      });
+    }
+
+    const addressData = {
+      firstName: addressDoc.firstName || "",
+      lastName: addressDoc.lastName || "",
+      street: addressDoc.street || "",
+      city: addressDoc.city || "",
+      state: addressDoc.state || "",
+      phone: addressDoc.phone || ""
+    };
 
     if (!items || items.length === 0) {
       return res.json({
@@ -593,12 +618,13 @@ export const createUpiOrder = async (req, res) => {
         });
       }
 
+      const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       const price = product.offerPrice;
-      subtotal += price * item.quantity;
+      subtotal += price * qty;
 
       itemsWithPrice.push({
         product: item.product,
-        quantity: item.quantity,
+        quantity: qty,
         price
       });
     }
@@ -615,24 +641,38 @@ export const createUpiOrder = async (req, res) => {
       }
     }
 
-    const amount = subtotal + deliveryCharge - discount;
+    const grossAmount = subtotal + deliveryCharge - discount;
+
+    const userDoc = await User.findById(userId).select("rewardPoints rewardGrants");
+    migrateLegacyRewardPoints(userDoc);
+    const balance = sumGrants(pruneExpiredGrants(userDoc.rewardGrants || []));
+    const redeem = computeAuthorizedRedeem(redeemRaw, balance, grossAmount);
+    const finalAmount = grossAmount - redeem;
+
+    if (finalAmount < 1) {
+      return res.json({
+        success: false,
+        message: "Online payment requires at least ₹1 after rewards. Use COD for ₹0 total or reduce points."
+      });
+    }
 
     // 🔥 CREATE RAZORPAY ORDER
     const razorpayOrder = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: Math.round(finalAmount * 100),
       currency: "INR",
       receipt: "upi_" + Date.now()
     });
 
     // 🔥 SAVE ORDER
     const order = await Order.create({
-      userId,   // 👈 NOW THIS WILL WORK
+      userId,
       items: itemsWithPrice,
       subtotal,
       deliveryCharge,
       discount,
-      amount,
-      address,
+      rewardPointsUsed: redeem,
+      amount: finalAmount,
+      address: addressData,
       paymentType: "UPI",
       paymentStatus: "Pending",
       isPaid: false,
@@ -670,6 +710,29 @@ export const verifyUpiPayment = async (req, res) => {
       orderId
     } = req.body;
 
+    const orderBefore = await Order.findById(orderId);
+    if (!orderBefore) {
+      return res.json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    if (!req.userId || orderBefore.userId.toString() !== req.userId.toString()) {
+      return res.json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    if (orderBefore.isPaid) {
+      const u = await User.findById(orderBefore.userId).select("rewardPoints").lean();
+      return res.json({
+        success: true,
+        rewardPoints: u?.rewardPoints ?? 0
+      });
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
@@ -684,22 +747,33 @@ export const verifyUpiPayment = async (req, res) => {
       });
     }
 
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      {
-        isPaid: true,
-        paymentStatus: "Paid",
-        razorpayPaymentId: razorpay_payment_id
-      },
-      { new: true }
+    const redeem = orderBefore.rewardPointsUsed || 0;
+    const earned = pointsEarnedFromPurchase(orderBefore.amount);
+
+    const pointsAfter = await applyRewardPointsChange(
+      User,
+      orderBefore.userId,
+      redeem,
+      earned,
+      { clearCart: true }
     );
 
-    await User.findByIdAndUpdate(order.userId, {
-      cartItems: {}
+    if (!pointsAfter) {
+      return res.json({
+        success: false,
+        message: "Could not apply reward points. Contact support if payment was deducted."
+      });
+    }
+
+    await Order.findByIdAndUpdate(orderId, {
+      isPaid: true,
+      paymentStatus: "Paid",
+      razorpayPaymentId: razorpay_payment_id
     });
 
     return res.json({
-      success: true
+      success: true,
+      rewardPoints: pointsAfter.rewardPoints ?? 0
     });
 
   } catch (error) {
