@@ -1859,7 +1859,7 @@ const MyOrders = () => {
 
     const [myOrders, setMyOrders] = useState([])
     const [tick, setTick] = useState(0)
-    const { currency, axios, user } = useAppContext()
+    const { currency, axios, user, setUser } = useAppContext()
     const [loading, setLoading] = useState(true)
 
     // *****for see all button setExpandedOrders ****
@@ -1925,6 +1925,9 @@ const MyOrders = () => {
         try {
             const { data } = await axios.post('/api/order/cancel', { orderId })
             if (data.success) {
+                if (typeof data.rewardPoints === "number" && user) {
+                    setUser({ ...user, rewardPoints: data.rewardPoints })
+                }
                 fetchMyOrders()
             } else {
                 alert(data.message)
@@ -2127,10 +2130,27 @@ const MyOrders = () => {
                                 </div>
                             )}
 
+                            {(order.rewardPointsUsed || 0) > 0 && (
+                                <div className="flex justify-between text-amber-800">
+                                    <p>Reward points used (1 pt = ₹1)</p>
+                                    <p>-{currency}{order.rewardPointsUsed}</p>
+                                </div>
+                            )}
+
                             <div className="flex justify-between font-semibold pt-2">
                                 <p>Total</p>
                                 <p>{currency}{order.amount}</p>
                             </div>
+
+                            {Math.floor(Number(order.amount) / 50) > 0 && (
+                                <p className="text-xs text-gray-500 pt-1">
+                                    Points earned on this order:{" "}
+                                    <span className="font-medium text-amber-800 tabular-nums">
+                                        {Math.floor(Number(order.amount) / 50)} pts
+                                    </span>
+                                    {" "}(₹50 spent = 1 pt)
+                                </p>
+                            )}
                         </div>
 
                         {/* TIMER + CANCEL */}

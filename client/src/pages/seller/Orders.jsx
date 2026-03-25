@@ -1917,7 +1917,12 @@ const Orders = () => {
 
     const deliveryCharge = order.deliveryCharge || 0
     const discount = order.discount || 0
-    const subtotal = order.subtotal || order.amount + discount
+    const rewardUsed = order.rewardPointsUsed || 0
+    const subtotal =
+      order.subtotal != null && order.subtotal !== undefined
+        ? order.subtotal
+        : Math.max(0, order.amount + rewardUsed - deliveryCharge + discount)
+    const pointsEarned = Math.floor(Number(order.amount) / 50)
 
     printWindow.document.write(`
     <html>
@@ -2055,7 +2060,9 @@ const Orders = () => {
               <p><span>Subtotal</span><span>₹${subtotal}</span></p>
               <p><span>Discount</span><span>- ₹${discount}</span></p>
               <p><span>Delivery</span><span>${deliveryCharge === 0 ? "Free" : "₹" + deliveryCharge}</span></p>
-              <p class="total"><span>Total</span><span>₹${order.amount}</span></p>
+              ${rewardUsed > 0 ? `<p><span>Reward points redeemed (1 pt = ₹1)</span><span>− ₹${rewardUsed}</span></p>` : ""}
+              <p class="total"><span>Total payable</span><span>₹${order.amount}</span></p>
+              ${pointsEarned > 0 ? `<p style="font-size:11px;color:#666;margin-top:6px;"><span>Customer reward points earned on this order</span><span>${pointsEarned} pts</span></p>` : ""}
             </div>
           </div>
 
@@ -2372,6 +2379,11 @@ const Orders = () => {
                 <p className="font-medium text-lg">
                   {currency}{order.amount}
                 </p>
+                {(order.rewardPointsUsed || 0) > 0 && (
+                  <p className="text-xs text-amber-800 font-medium">
+                    −{currency}{order.rewardPointsUsed} via reward points
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">
                   {formatDateTime(order.createdAt)}
                 </p>

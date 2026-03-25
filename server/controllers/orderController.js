@@ -2183,13 +2183,31 @@ import Address from "../models/Address.js";
 import {
     computeAuthorizedRedeem,
     pointsEarnedFromPurchase,
-    applyRewardPointsChange
+    applyRewardPointsChange,
+    applyRewardPointsRefundOnCancel
 } from "../utils/rewardPoints.js";
 import {
     migrateLegacyRewardPoints,
     pruneExpiredGrants,
     sumGrants
 } from "../utils/rewardGrants.js";
+
+/**
+ * COD: points applied at order creation. UPI: only after payment (isPaid).
+ * Unpaid UPI orders never had points deducted/earned on the user — skip refund.
+ */
+async function refundRewardPointsForCancelledOrder(order) {
+    const redeem = Math.max(0, Math.floor(order.rewardPointsUsed || 0));
+    const earned = pointsEarnedFromPurchase(order.amount);
+
+    let applied = false;
+    if (order.paymentType === "COD") applied = true;
+    else if (order.paymentType === "UPI" && order.isPaid) applied = true;
+
+    if (!applied || (redeem === 0 && earned === 0)) return null;
+
+    return applyRewardPointsRefundOnCancel(User, order.userId, redeem, earned);
+}
 
 
 // ==============================
@@ -2499,6 +2517,23 @@ export const cancelOrder = async (req, res) => {
             order.status = "Cancelled";
             await order.save();
 
+            const pts = await refundRewardPointsForCancelledOrder(order);
+
+            return res.json({
+                success: true,
+                message: "Order cancelled",
+                rewardPoints: pts?.rewardPoints
+            });
+        }
+
+        // ======================
+        // UPI — unpaid (no payment captured yet)
+        // ======================
+        if (order.paymentType === "UPI" && !order.isPaid) {
+            order.status = "Cancelled";
+            order.paymentStatus = "Failed";
+            await order.save();
+
             return res.json({
                 success: true,
                 message: "Order cancelled"
@@ -2506,7 +2541,7 @@ export const cancelOrder = async (req, res) => {
         }
 
         // ======================
-        // UPI / ONLINE PAYMENT
+        // UPI / ONLINE — paid: Razorpay refund + reward points reversal
         // ======================
 
         if (!order.razorpayPaymentId)
@@ -2526,9 +2561,12 @@ export const cancelOrder = async (req, res) => {
 
         await order.save();
 
+        const pts = await refundRewardPointsForCancelledOrder(order);
+
         return res.json({
             success: true,
-            message: "Refund initiated"
+            message: "Refund initiated",
+            rewardPoints: pts?.rewardPoints
         });
 
     } catch (error) {
@@ -2585,14 +2623,28 @@ export const updateOrderStatus = async (req, res) => {
                 order.status = "Cancelled";
                 await order.save();
 
+                const pts = await refundRewardPointsForCancelledOrder(order);
+
                 return res.json({
                     success: true,
-                    message: "Order cancelled"
+                    message: "Order cancelled",
+                    rewardPoints: pts?.rewardPoints
                 });
             }
 
             // ONLINE / UPI ORDER
             if (order.paymentType !== "COD") {
+
+                if (!order.isPaid) {
+                    order.status = "Cancelled";
+                    order.paymentStatus = "Failed";
+                    await order.save();
+
+                    return res.json({
+                        success: true,
+                        message: "Order cancelled"
+                    });
+                }
 
                 if (!order.razorpayPaymentId) {
                     return res.json({
@@ -2612,9 +2664,12 @@ export const updateOrderStatus = async (req, res) => {
 
                 await order.save();
 
+                const pts = await refundRewardPointsForCancelledOrder(order);
+
                 return res.json({
                     success: true,
-                    message: "Refund initiated"
+                    message: "Refund initiated",
+                    rewardPoints: pts?.rewardPoints
                 });
             }
         }

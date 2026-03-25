@@ -92,3 +92,48 @@ export async function applyRewardPointsChange(UserModel, userId, redeem, earned,
 
   return null;
 }
+
+/**
+ * Reverse reward effect when an order is cancelled: remove points earned on that order
+ * and refund points the user had redeemed (1 point = ₹1).
+ */
+export async function applyRewardPointsRefundOnCancel(UserModel, userId, redeem, earned) {
+  const r = Math.max(0, Math.floor(Number(redeem) || 0));
+  const e = Math.max(0, Math.floor(Number(earned) || 0));
+
+  if (r === 0 && e === 0) {
+    const u = await UserModel.findById(userId).select("rewardPoints").lean();
+    return u;
+  }
+
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const user = await UserModel.findById(userId);
+    if (!user) return null;
+
+    migrateLegacyRewardPoints(user);
+    let grants = pruneExpiredGrants(user.rewardGrants || []);
+
+    const totalAvail = sumGrants(grants);
+    const eRemove = Math.min(e, totalAvail);
+    grants = deductFromGrants(grants, eRemove);
+
+    if (r > 0) {
+      grants.push(createOrderGrant(r));
+    }
+
+    const total = sumGrants(grants);
+    const v = user.__v ?? 0;
+
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: userId, __v: v },
+      { $set: { rewardGrants: grants, rewardPoints: total }, $inc: { __v: 1 } },
+      { new: true }
+    )
+      .select("rewardPoints")
+      .lean();
+
+    if (updated) return updated;
+  }
+
+  return null;
+}

@@ -14,6 +14,9 @@ const Profile = () => {
   const [showAddresses, setShowAddresses] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [addrLoading, setAddrLoading] = useState(false);
+  const [showRewardTx, setShowRewardTx] = useState(false);
+  const [rewardTxLoading, setRewardTxLoading] = useState(false);
+  const [rewardTx, setRewardTx] = useState([]);
 
   useEffect(() => {
     if (!user) {
@@ -42,6 +45,28 @@ const Profile = () => {
     const next = !showAddresses;
     setShowAddresses(next);
     if (next) loadAddresses();
+  };
+
+  const loadRewardTransactions = async () => {
+    setRewardTxLoading(true);
+    try {
+      const { data } = await axios.get("/api/user/reward-transactions");
+      if (data.success) {
+        setRewardTx(data.transactions || []);
+      } else {
+        toast.error(data.message || "Could not load points history");
+      }
+    } catch (err) {
+      toast.error(err.message || "Could not load points history");
+    } finally {
+      setRewardTxLoading(false);
+    }
+  };
+
+  const toggleRewardTransactions = () => {
+    const next = !showRewardTx;
+    setShowRewardTx(next);
+    if (next) loadRewardTransactions();
   };
 
   if (!user) return null;
@@ -82,15 +107,53 @@ const Profile = () => {
         <div className="w-16 h-0.5 bg-primary rounded-full" />
       </div>
 
-      <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <button
+        type="button"
+        onClick={toggleRewardTransactions}
+        className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full text-left"
+      >
         <div>
           <p className="text-sm font-semibold text-amber-900">Reward points</p>
           <p className="text-xs text-amber-800/80 mt-0.5">
-            1 point = ₹1 off · Order points: 2 per ₹100 spent, valid 1 year · Company bonus expires in 10 days
+            1 point = ₹1 off · Tap to view transaction history
           </p>
         </div>
         <p className="text-2xl font-bold text-amber-900 tabular-nums">{rewardPts} pts</p>
-      </div>
+      </button>
+
+      {showRewardTx && (
+        <div className="mb-6 border border-amber-200 rounded-xl bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-amber-100 bg-amber-50/70">
+            <p className="text-sm font-semibold text-amber-900">Points transactions</p>
+          </div>
+          {rewardTxLoading ? (
+            <p className="px-4 py-6 text-sm text-gray-500 text-center">Loading transactions…</p>
+          ) : rewardTx.length === 0 ? (
+            <p className="px-4 py-5 text-sm text-gray-500">No points transactions yet.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {rewardTx.map((tx) => (
+                <li key={tx.id} className="px-4 py-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{tx.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {new Date(tx.date).toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <p
+                    className={`text-sm font-semibold tabular-nums ${
+                      tx.type === "credit" ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {tx.type === "credit" ? "+" : "-"}
+                    {tx.points} pts
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 pb-6 border-b border-gray-100">

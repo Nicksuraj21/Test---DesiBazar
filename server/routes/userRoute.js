@@ -60,6 +60,7 @@ import {
   registerUser,
   loginUser,
   updateProfile,
+  getRewardTransactions,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 
@@ -71,6 +72,7 @@ userRouter.post("/verify-otp", verifyOtp);
 
 userRouter.get("/is-auth", authUser, isAuth);
 userRouter.patch("/profile", authUser, updateProfile);
+userRouter.get("/reward-transactions", authUser, getRewardTransactions);
 userRouter.get("/logout", authUser, logout);
 
 userRouter.post("/login", loginUser);

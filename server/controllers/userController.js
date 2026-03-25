@@ -865,7 +865,9 @@
 
 
 import User from "../models/User.js";
+import Order from "../models/Order.js";
 import { pruneAndPersistUserRewards } from "../utils/rewardGrants.js";
+import { pointsEarnedFromPurchase } from "../utils/rewardPoints.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
@@ -1151,6 +1153,90 @@ export const updateProfile = async (req, res) => {
     return res.json({ success: true, user });
   } catch (error) {
     return res.json({ success: false, message: "Update failed" });
+  }
+};
+
+// ==============================
+// REWARD TRANSACTIONS
+// ==============================
+export const getRewardTransactions = async (req, res) => {
+  try {
+    const userId = req.userId;
+    await pruneAndPersistUserRewards(User, userId);
+
+    const user = await User.findById(userId).select("rewardPoints");
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const orders = await Order.find({ userId })
+      .select("paymentType isPaid status rewardPointsUsed amount createdAt updatedAt")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const tx = [];
+
+    for (const order of orders) {
+      const redeem = Math.max(0, Math.floor(Number(order.rewardPointsUsed) || 0));
+      const earned = pointsEarnedFromPurchase(order.amount);
+      const applied =
+        order.paymentType === "COD" || (order.paymentType === "UPI" && order.isPaid);
+      const cancelled = order.status === "Cancelled" || order.status === "Canceled";
+      const shortId = String(order._id).slice(-6);
+
+      if (!applied) continue;
+
+      if (redeem > 0) {
+        tx.push({
+          id: `redeem-${order._id}`,
+          type: "debit",
+          points: redeem,
+          title: `Redeemed on order #${shortId}`,
+          date: order.createdAt,
+        });
+      }
+
+      if (earned > 0) {
+        tx.push({
+          id: `earned-${order._id}`,
+          type: "credit",
+          points: earned,
+          title: `Earned from order #${shortId}`,
+          date: order.createdAt,
+        });
+      }
+
+      if (cancelled) {
+        if (redeem > 0) {
+          tx.push({
+            id: `refund-redeem-${order._id}`,
+            type: "credit",
+            points: redeem,
+            title: `Refunded redeemed points (cancelled #${shortId})`,
+            date: order.updatedAt,
+          });
+        }
+        if (earned > 0) {
+          tx.push({
+            id: `reverse-earned-${order._id}`,
+            type: "debit",
+            points: earned,
+            title: `Reversed earned points (cancelled #${shortId})`,
+            date: order.updatedAt,
+          });
+        }
+      }
+    }
+
+    tx.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return res.json({
+      success: true,
+      rewardPoints: user.rewardPoints || 0,
+      transactions: tx,
+    });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
   }
 };
 
