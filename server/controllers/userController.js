@@ -1164,7 +1164,7 @@ export const getRewardTransactions = async (req, res) => {
     const userId = req.userId;
     await pruneAndPersistUserRewards(User, userId);
 
-    const user = await User.findById(userId).select("rewardPoints");
+    const user = await User.findById(userId).select("rewardPoints rewardGrants");
     if (!user) {
       return res.json({ success: false, message: "User not found" });
     }
@@ -1226,6 +1226,26 @@ export const getRewardTransactions = async (req, res) => {
           });
         }
       }
+    }
+
+    tx.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Add admin-granted credits (seller panel) into the user's points history.
+    // Both single add and bulk add generate `rewardGrants.source === "admin"`.
+    const adminGrants = Array.isArray(user.rewardGrants) ? user.rewardGrants : [];
+    for (let i = 0; i < adminGrants.length; i++) {
+      const g = adminGrants[i];
+      if (!g || g.source !== "admin") continue;
+      const points = Math.max(0, Math.floor(Number(g.amount) || 0));
+      if (points <= 0) continue;
+
+      tx.push({
+        id: `admin-credit-${String(g.adminBatchId || "single")}-${String(g.createdAt || "").slice(-10)}-${i}`,
+        type: "credit",
+        points,
+        title: "Credited from DesiBazar",
+        date: g.createdAt || new Date(),
+      });
     }
 
     tx.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

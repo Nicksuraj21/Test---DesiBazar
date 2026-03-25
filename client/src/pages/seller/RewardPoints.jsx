@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const RewardPoints = () => {
     const { axios } = useAppContext();
+
+    const BULK_BATCH_HISTORY_KEY = "desibazar_bulkRewardPoints_history_v1";
 
     const [userIdInput, setUserIdInput] = useState("");
     const [phoneInput, setPhoneInput] = useState("");
@@ -23,6 +25,36 @@ const RewardPoints = () => {
     const [lastBulkBatchId, setLastBulkBatchId] = useState("");
     const [bulkBatchIdToRemove, setBulkBatchIdToRemove] = useState("");
     const [loadingBulkRemove, setLoadingBulkRemove] = useState(false);
+
+    const [bulkHistory, setBulkHistory] = useState(() => {
+        try {
+            const raw = localStorage.getItem(BULK_BATCH_HISTORY_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed;
+        } catch {
+            return [];
+        }
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(BULK_BATCH_HISTORY_KEY, JSON.stringify(bulkHistory));
+        } catch {
+            // ignore
+        }
+    }, [bulkHistory]);
+
+    useEffect(() => {
+        if (!bulkHistory?.length) return;
+        const newest = bulkHistory[0];
+        if (newest?.batchId && typeof newest.batchId === "string") {
+            setLastBulkBatchId(newest.batchId);
+            setBulkBatchIdToRemove(newest.batchId);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const findUser = async (e) => {
         e?.preventDefault();
@@ -140,6 +172,21 @@ const RewardPoints = () => {
                 setLastBulkBatchId(data.adminBatchId || "");
                 setBulkBatchIdToRemove(data.adminBatchId || "");
                 setBulkPointsToAdd("");
+
+                const newRecord = {
+                    batchId: data.adminBatchId || "",
+                    pointsPerUser: data.pointsPerUser ?? p,
+                    affectedUsers: data.affectedUsers ?? 0,
+                    totalAdded: data.totalAdded ?? 0,
+                    createdAt: new Date().toISOString()
+                };
+
+                if (newRecord.batchId) {
+                    setBulkHistory((prev) => {
+                        const next = [newRecord, ...(Array.isArray(prev) ? prev : [])];
+                        return next.slice(0, 20);
+                    });
+                }
             } else {
                 toast.error(data.message || "Failed");
             }
@@ -166,6 +213,19 @@ const RewardPoints = () => {
 
             if (data.success) {
                 toast.success(data.message || "Bulk points removed");
+
+                setBulkHistory((prev) => {
+                    if (!Array.isArray(prev)) return prev;
+                    return prev.map((item) => {
+                        if (item?.batchId !== batchId) return item;
+                        return {
+                            ...item,
+                            removedAt: new Date().toISOString(),
+                            totalRemoved: data.totalRemoved ?? item.totalRemoved ?? 0,
+                            affectedUsersRemoved: data.affectedUsers ?? item.affectedUsersRemoved ?? 0
+                        };
+                    });
+                });
             } else {
                 toast.error(data.message || "Failed");
             }
@@ -286,6 +346,112 @@ const RewardPoints = () => {
                             {loadingBulkRemove ? "Removing…" : "Remove bulk points"}
                         </button>
                     </form>
+
+                    <div className="pt-3 border-t border-blue-200">
+                        <div className="flex items-center justify-between gap-3">
+                            <h4 className="text-sm font-semibold text-gray-800">Bulk history</h4>
+                            <button
+                                type="button"
+                                className="text-xs text-gray-700 underline hover:text-gray-900"
+                                onClick={() => {
+                                    setBulkHistory([]);
+                                    setLastBulkBatchId("");
+                                    setBulkBatchIdToRemove("");
+                                    try {
+                                        localStorage.removeItem(BULK_BATCH_HISTORY_KEY);
+                                    } catch {
+                                        // ignore
+                                    }
+                                }}
+                            >
+                                Clear
+                            </button>
+                        </div>
+
+                        {bulkHistory?.length ? (
+                            <div className="space-y-3 pt-2">
+                                {bulkHistory.map((item) => (
+                                    <div
+                                        key={item.batchId}
+                                        className="bg-white border border-blue-200 rounded-lg p-3 space-y-2"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-xs text-gray-600">
+                                                    Created:{" "}
+                                                    <span className="font-medium">
+                                                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}
+                                                    </span>
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900 break-all">
+                                                    BatchId:{" "}
+                                                    <span className="font-mono text-[11px]">
+                                                        {item.batchId || "—"}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <p className="text-xs text-gray-600">
+                                                    +{item.pointsPerUser ?? 0} pts/user
+                                                </p>
+                                                {item.removedAt ? (
+                                                    <p className="text-xs text-red-700 font-medium">
+                                                        Removed
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-xs text-green-700 font-medium">
+                                                        Active
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                className="px-3 py-1 bg-blue-700 text-white rounded-lg text-xs font-medium"
+                                                onClick={() => {
+                                                    setBulkBatchIdToRemove(item.batchId || "");
+                                                    toast.success("BatchId filled for remove");
+                                                }}
+                                            >
+                                                Use for remove
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="px-3 py-1 bg-white text-gray-800 border border-gray-300 rounded-lg text-xs font-medium"
+                                                onClick={async () => {
+                                                    const text = String(item.batchId || "");
+                                                    if (!text) {
+                                                        toast.error("No batchId");
+                                                        return;
+                                                    }
+                                                    try {
+                                                        await navigator.clipboard.writeText(text);
+                                                        toast.success("BatchId copied");
+                                                    } catch {
+                                                        toast.error("Copy failed (clipboard not allowed)");
+                                                    }
+                                                }}
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+
+                                        {item.removedAt ? (
+                                            <p className="text-xs text-gray-500">
+                                                Removed total: {item.totalRemoved ?? 0} pts (users: {item.affectedUsersRemoved ?? item.affectedUsers ?? 0})
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="pt-2">
+                                <p className="text-xs text-gray-600">No bulk batch history yet.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {user && (
