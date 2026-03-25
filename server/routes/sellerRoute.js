@@ -5,7 +5,9 @@ import {
     sellerLogout,
     lookupUserForRewards,
     addUserRewardPoints,
-    removeUserRewardPoints
+    removeUserRewardPoints,
+    bulkAddRewardPointsToAllUsers,
+    bulkRemoveRewardPointsByBatchId
 } from '../controllers/sellerController.js';
 import authSeller from '../middlewares/authSeller.js';
 
@@ -18,5 +20,8 @@ sellerRouter.get('/logout', sellerLogout);
 sellerRouter.get('/user-lookup', authSeller, lookupUserForRewards);
 sellerRouter.post('/add-reward-points', authSeller, addUserRewardPoints);
 sellerRouter.post('/remove-reward-points', authSeller, removeUserRewardPoints);
+
+sellerRouter.post('/bulk-add-reward-points', authSeller, bulkAddRewardPointsToAllUsers);
+sellerRouter.post('/bulk-remove-reward-points', authSeller, bulkRemoveRewardPointsByBatchId);
 
 export default sellerRouter;

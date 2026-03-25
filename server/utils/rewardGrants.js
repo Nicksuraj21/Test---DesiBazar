@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 export const MS_PER_DAY = 86400000;
 /** Points added from admin panel */
 export const ADMIN_REWARD_GRANT_DAYS = 10;
@@ -8,17 +10,19 @@ function toPlainGrant(g) {
   return {
     amount: Math.floor(Number(g.amount) || 0),
     source: g.source,
+    adminBatchId: g.adminBatchId,
     expiresAt: g.expiresAt instanceof Date ? g.expiresAt : new Date(g.expiresAt),
     createdAt: g.createdAt ? (g.createdAt instanceof Date ? g.createdAt : new Date(g.createdAt)) : new Date()
   };
 }
 
-export function createAdminGrant(amount) {
+export function createAdminGrant(amount, adminBatchId) {
   const a = Math.max(0, Math.floor(Number(amount) || 0));
   const expiresAt = new Date(Date.now() + ADMIN_REWARD_GRANT_DAYS * MS_PER_DAY);
   return {
     amount: a,
     source: "admin",
+    adminBatchId,
     expiresAt,
     createdAt: new Date()
   };
@@ -118,12 +122,17 @@ export async function pruneAndPersistUserRewards(UserModel, userId) {
   return user;
 }
 
+export function generateAdminBatchId() {
+  return `admin_${crypto.randomBytes(12).toString("hex")}`;
+}
+
 /**
  * Admin panel: add a grant that expires in ADMIN_REWARD_GRANT_DAYS.
  */
-export async function addAdminGrantToUser(UserModel, userId, points) {
+export async function addAdminGrantToUser(UserModel, userId, points, options = {}) {
   const p = Math.max(0, Math.floor(Number(points) || 0));
   if (p <= 0) return null;
+  const { adminBatchId } = options;
 
   for (let attempt = 0; attempt < 10; attempt++) {
     const user = await UserModel.findById(userId);
@@ -131,7 +140,7 @@ export async function addAdminGrantToUser(UserModel, userId, points) {
 
     migrateLegacyRewardPoints(user);
     let grants = pruneExpiredGrants(user.rewardGrants || []);
-    grants.push(createAdminGrant(p));
+    grants.push(createAdminGrant(p, adminBatchId));
     const total = sumGrants(grants);
     const v = user.__v ?? 0;
 
@@ -146,6 +155,18 @@ export async function addAdminGrantToUser(UserModel, userId, points) {
     if (updated) return updated;
   }
   return null;
+}
+
+async function forEachUserId(UserModel, handler) {
+  // Cursor avoids loading all user docs in memory at once.
+  const cursor = UserModel.find({}).select("_id").cursor();
+  let processed = 0;
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const doc of cursor) {
+    processed++;
+    await handler(doc._id);
+  }
+  return processed;
 }
 
 /**
@@ -197,4 +218,99 @@ export async function removeRewardPointsFromUser(UserModel, userId, points) {
   }
 
   return { ok: false, reason: "retry_exhausted" };
+}
+
+/**
+ * Bulk remove: remove only admin grants that belong to a specific bulk batch.
+ * This does NOT touch `source: "order"` points.
+ */
+export async function removeAdminBatchFromUser(UserModel, userId, adminBatchId) {
+  if (!adminBatchId || typeof adminBatchId !== "string") {
+    return { ok: false, reason: "invalid_batch_id" };
+  }
+
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const user = await UserModel.findById(userId);
+    if (!user) return { ok: false, reason: "not_found" };
+
+    migrateLegacyRewardPoints(user);
+    // Keep rewardPoints aligned with non-expired grants.
+    const pruned = pruneExpiredGrants(user.rewardGrants || []);
+
+    const removedGrants = pruned.filter(
+      (g) => g.source === "admin" && g.adminBatchId === adminBatchId
+    );
+    const remainingGrants = pruned.filter(
+      (g) => !(g.source === "admin" && g.adminBatchId === adminBatchId)
+    );
+
+    const removedAmount = sumGrants(removedGrants);
+    if (removedAmount <= 0) {
+      return { ok: true, removed: 0, userId };
+    }
+
+    const total = sumGrants(remainingGrants);
+    const v = user.__v ?? 0;
+
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: userId, __v: v },
+      { $set: { rewardGrants: remainingGrants, rewardPoints: total }, $inc: { __v: 1 } },
+      { new: true }
+    )
+      .select("rewardPoints")
+      .lean();
+
+    if (updated) {
+      return { ok: true, removed: removedAmount, userId };
+    }
+  }
+
+  return { ok: false, reason: "retry_exhausted" };
+}
+
+/**
+ * Bulk add: add the same admin points grant to every user, tagged by `adminBatchId`.
+ */
+export async function bulkAddAdminPointsToAllUsers(UserModel, points) {
+  const p = Math.max(0, Math.floor(Number(points) || 0));
+  if (p <= 0) return null;
+
+  const adminBatchId = generateAdminBatchId();
+  let affectedUsers = 0;
+  let totalAdded = 0;
+
+  await forEachUserId(UserModel, async (userId) => {
+    const updated = await addAdminGrantToUser(UserModel, userId, p, { adminBatchId });
+    if (updated) {
+      affectedUsers++;
+      totalAdded += p;
+    }
+  });
+
+  return {
+    adminBatchId,
+    affectedUsers,
+    pointsPerUser: p,
+    totalAdded
+  };
+}
+
+/**
+ * Bulk remove: remove only admin grants from all users for `adminBatchId`.
+ */
+export async function bulkRemoveAdminPointsByBatchId(UserModel, adminBatchId) {
+  if (!adminBatchId || typeof adminBatchId !== "string") return null;
+
+  let affectedUsers = 0;
+  let totalRemoved = 0;
+
+  await forEachUserId(UserModel, async (userId) => {
+    const result = await removeAdminBatchFromUser(UserModel, userId, adminBatchId);
+    if (result?.ok && result.removed > 0) {
+      affectedUsers++;
+      totalRemoved += result.removed;
+    }
+  });
+
+  return { affectedUsers, totalRemoved };
 }

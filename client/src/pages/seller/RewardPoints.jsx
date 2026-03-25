@@ -17,6 +17,13 @@ const RewardPoints = () => {
     const [pointsToRemove, setPointsToRemove] = useState("");
     const [loadingRemove, setLoadingRemove] = useState(false);
 
+    const [bulkPointsToAdd, setBulkPointsToAdd] = useState("");
+    const [loadingBulkAdd, setLoadingBulkAdd] = useState(false);
+
+    const [lastBulkBatchId, setLastBulkBatchId] = useState("");
+    const [bulkBatchIdToRemove, setBulkBatchIdToRemove] = useState("");
+    const [loadingBulkRemove, setLoadingBulkRemove] = useState(false);
+
     const findUser = async (e) => {
         e?.preventDefault();
         const uid = userIdInput.trim();
@@ -114,6 +121,61 @@ const RewardPoints = () => {
         }
     };
 
+    const bulkAddToAllUsers = async (e) => {
+        e.preventDefault();
+        const p = Math.floor(Number(bulkPointsToAdd));
+        if (!Number.isFinite(p) || p < 1) {
+            toast.error("Enter valid points (1 or more)");
+            return;
+        }
+
+        setLoadingBulkAdd(true);
+        try {
+            const { data } = await axios.post("/api/seller/bulk-add-reward-points", {
+                points: p
+            });
+
+            if (data.success) {
+                toast.success(data.message || "Bulk points added");
+                setLastBulkBatchId(data.adminBatchId || "");
+                setBulkBatchIdToRemove(data.adminBatchId || "");
+                setBulkPointsToAdd("");
+            } else {
+                toast.error(data.message || "Failed");
+            }
+        } catch (err) {
+            toast.error(err.message || "Failed");
+        } finally {
+            setLoadingBulkAdd(false);
+        }
+    };
+
+    const bulkRemoveByBatchId = async (e) => {
+        e.preventDefault();
+        const batchId = String(bulkBatchIdToRemove || "").trim();
+        if (!batchId) {
+            toast.error("Enter batchId");
+            return;
+        }
+
+        setLoadingBulkRemove(true);
+        try {
+            const { data } = await axios.post("/api/seller/bulk-remove-reward-points", {
+                batchId
+            });
+
+            if (data.success) {
+                toast.success(data.message || "Bulk points removed");
+            } else {
+                toast.error(data.message || "Failed");
+            }
+        } catch (err) {
+            toast.error(err.message || "Failed");
+        } finally {
+            setLoadingBulkRemove(false);
+        }
+    };
+
     return (
         <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll">
             <div className="md:p-10 p-4 max-w-2xl space-y-8">
@@ -164,6 +226,67 @@ const RewardPoints = () => {
                         {loadingLookup ? "Searching…" : "Find user"}
                     </button>
                 </form>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 space-y-4">
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-800">Bulk reward points (all users)</h3>
+                        <p className="text-xs text-gray-600 mt-1">
+                            Bulk add/remove me remove sirf usi batch se add kiye gaye admin points ko hatayega. Orders wale points remove nahi honge.
+                        </p>
+                    </div>
+
+                    <form onSubmit={bulkAddToAllUsers} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end pt-2 border-t border-blue-200">
+                        <div className="flex-1 w-full">
+                            <label className="block text-sm text-gray-600 mb-1">Points to add per user</label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={bulkPointsToAdd}
+                                onChange={(e) => setBulkPointsToAdd(e.target.value)}
+                                className="w-full border border-blue-300 rounded px-3 py-2 outline-none bg-white"
+                                placeholder="e.g. 100"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loadingBulkAdd}
+                            className="px-5 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-60 whitespace-nowrap"
+                        >
+                            {loadingBulkAdd ? "Adding…" : "Add to all users"}
+                        </button>
+                    </form>
+
+                    <div className="pt-1">
+                        <p className="text-xs text-gray-600">
+                            Last bulk batchId:{" "}
+                            <span className="font-mono text-[11px] text-gray-800 break-all">
+                                {lastBulkBatchId || "—"}
+                            </span>
+                        </p>
+                    </div>
+
+                    <form onSubmit={bulkRemoveByBatchId} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end pt-2 border-t border-blue-200">
+                        <div className="flex-1 w-full">
+                            <label className="block text-sm text-gray-600 mb-1">BatchId to remove</label>
+                            <input
+                                value={bulkBatchIdToRemove}
+                                onChange={(e) => setBulkBatchIdToRemove(e.target.value)}
+                                className="w-full border border-red-200 rounded px-3 py-2 outline-none bg-white"
+                                placeholder="admin_xxx..."
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Ye remove sirf batch-id ke admin points ko remove karega (orders points untouched).
+                            </p>
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loadingBulkRemove || !String(bulkBatchIdToRemove || "").trim()}
+                            className="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60 whitespace-nowrap"
+                        >
+                            {loadingBulkRemove ? "Removing…" : "Remove bulk points"}
+                        </button>
+                    </form>
+                </div>
 
                 {user && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 space-y-4">

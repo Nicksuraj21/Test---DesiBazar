@@ -3,9 +3,11 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import {
     addAdminGrantToUser,
+    bulkAddAdminPointsToAllUsers,
     pruneAndPersistUserRewards,
     ADMIN_REWARD_GRANT_DAYS,
-    removeRewardPointsFromUser
+    removeRewardPointsFromUser,
+    bulkRemoveAdminPointsByBatchId
 } from "../utils/rewardGrants.js";
 
 const MAX_REWARD_POINTS_PER_REQUEST = 100000;
@@ -212,6 +214,73 @@ export const removeUserRewardPoints = async (req, res) => {
             success: true,
             message: msg,
             user: result.user
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
+// ==============================
+// ADMIN: bulk add reward points to EVERY user
+// POST /api/seller/bulk-add-reward-points { points }
+// ==============================
+export const bulkAddRewardPointsToAllUsers = async (req, res) => {
+    try {
+        const { points } = req.body;
+
+        const p = Math.floor(Number(points));
+        if (!Number.isFinite(p) || p <= 0 || p > MAX_REWARD_POINTS_PER_REQUEST) {
+            return res.json({
+                success: false,
+                message: `Points must be between 1 and ${MAX_REWARD_POINTS_PER_REQUEST}`
+            });
+        }
+
+        const result = await bulkAddAdminPointsToAllUsers(User, p);
+        if (!result) {
+            return res.json({
+                success: false,
+                message: "Could not update reward points"
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: `Added ${result.pointsPerUser} points to ${result.affectedUsers} users`,
+            adminBatchId: result.adminBatchId,
+            affectedUsers: result.affectedUsers,
+            pointsPerUser: result.pointsPerUser,
+            totalAdded: result.totalAdded
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
+// ==============================
+// ADMIN: bulk remove only points from a specific bulk action (not order points)
+// POST /api/seller/bulk-remove-reward-points { batchId }
+// ==============================
+export const bulkRemoveRewardPointsByBatchId = async (req, res) => {
+    try {
+        const { batchId } = req.body;
+
+        if (!batchId || typeof batchId !== "string" || !batchId.trim()) {
+            return res.json({ success: false, message: "batchId required" });
+        }
+
+        const result = await bulkRemoveAdminPointsByBatchId(User, batchId.trim());
+        if (!result) {
+            return res.json({ success: false, message: "Invalid batchId" });
+        }
+
+        return res.json({
+            success: true,
+            message: `Removed ${result.totalRemoved} points from ${result.affectedUsers} users (bulk batch)`,
+            affectedUsers: result.affectedUsers,
+            totalRemoved: result.totalRemoved
         });
     } catch (error) {
         console.log(error.message);

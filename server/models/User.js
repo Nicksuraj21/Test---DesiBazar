@@ -60,6 +60,7 @@ const userSchema = new mongoose.Schema(
             {
                 amount: { type: Number, required: true, min: 0 },
                 source: { type: String, enum: ["admin", "order"], required: true },
+                adminBatchId: { type: String, default: undefined },
                 expiresAt: { type: Date, required: true },
                 createdAt: { type: Date, default: Date.now },
             },
