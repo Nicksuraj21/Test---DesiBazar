@@ -682,7 +682,7 @@ const Cart = () => {
                                     }
                                     setShowAddress(!showAddress);
                                 }}
-                                className="w-full text-xs px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium text-center"
+                                className="w-full text-xs px-2.5 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium text-center"
                             >
                                 Add Address & Change
                             </button>
