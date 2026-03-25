@@ -17,6 +17,7 @@ const Profile = () => {
   const [showRewardTx, setShowRewardTx] = useState(false);
   const [rewardTxLoading, setRewardTxLoading] = useState(false);
   const [rewardTx, setRewardTx] = useState([]);
+  const [rewardTxVisibleCount, setRewardTxVisibleCount] = useState(5);
 
   useEffect(() => {
     if (!user) {
@@ -66,7 +67,10 @@ const Profile = () => {
   const toggleRewardTransactions = () => {
     const next = !showRewardTx;
     setShowRewardTx(next);
-    if (next) loadRewardTransactions();
+    if (next) {
+      setRewardTxVisibleCount(5);
+      loadRewardTransactions();
+    }
   };
 
   if (!user) return null;
@@ -107,19 +111,30 @@ const Profile = () => {
         <div className="w-16 h-0.5 bg-primary rounded-full" />
       </div>
 
-      <button
-        type="button"
-        onClick={toggleRewardTransactions}
-        className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full text-left"
-      >
+      <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full text-left">
         <div>
           <p className="text-sm font-semibold text-amber-900">Reward points</p>
           <p className="text-xs text-amber-800/80 mt-0.5">
-            1 point = ₹1 off · Tap to view transaction history
+            1 point = ₹1 off
           </p>
         </div>
-        <p className="text-2xl font-bold text-amber-900 tabular-nums">{rewardPts} pts</p>
-      </button>
+        <div className="sm:ml-auto flex items-center gap-2">
+          <p className="text-2xl font-bold text-amber-900 tabular-nums min-w-[110px] h-9 flex items-center justify-end leading-none">
+            {rewardPts} pts
+          </p>
+          <button
+            type="button"
+            onClick={toggleRewardTransactions}
+            className={`px-3 py-2 rounded-lg text-xs font-semibold border transition ${
+              showRewardTx
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-amber-300 bg-white text-amber-900 hover:bg-amber-50"
+            }`}
+          >
+            {showRewardTx ? "Hide history" : "History"}
+          </button>
+        </div>
+      </div>
 
       {showRewardTx && (
         <div className="mb-6 border border-amber-200 rounded-xl bg-white overflow-hidden">
@@ -131,8 +146,9 @@ const Profile = () => {
           ) : rewardTx.length === 0 ? (
             <p className="px-4 py-5 text-sm text-gray-500">No points transactions yet.</p>
           ) : (
-            <ul className="divide-y divide-gray-100">
-              {rewardTx.map((tx) => (
+            <>
+              <ul className="divide-y divide-gray-100">
+                {rewardTx.slice(0, rewardTxVisibleCount).map((tx) => (
                 <li key={tx.id} className="px-4 py-3 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-gray-800">{tx.title}</p>
@@ -149,8 +165,20 @@ const Profile = () => {
                     {tx.points} pts
                   </p>
                 </li>
-              ))}
-            </ul>
+                ))}
+              </ul>
+              {rewardTx.length > rewardTxVisibleCount && (
+                <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/70">
+                  <button
+                    type="button"
+                    onClick={() => setRewardTxVisibleCount((prev) => prev + 5)}
+                    className="w-full text-sm font-medium text-primary hover:underline"
+                  >
+                    View more
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
