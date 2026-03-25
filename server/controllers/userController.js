@@ -1125,6 +1125,33 @@ export const googleLogin = async (req, res) => {
 
 
 // ==============================
+// UPDATE PROFILE (name)
+// ==============================
+export const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || !String(name).trim()) {
+      return res.json({ success: false, message: "Name required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { name: String(name).trim() },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    return res.json({ success: true, user });
+  } catch (error) {
+    return res.json({ success: false, message: "Update failed" });
+  }
+};
+
+// ==============================
 // CHECK AUTH
 // ==============================
 export const isAuth = async (req, res) => {

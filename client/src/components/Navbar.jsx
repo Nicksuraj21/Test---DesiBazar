@@ -1098,7 +1098,10 @@ const Navbar = () => {
           ) : (
             <div className="relative group">
               <img src={assets.profile_icon} className="w-10 cursor-pointer" />
-              <ul className="hidden group-hover:block absolute top-10 right-0 bg-white shadow border py-2 w-32 rounded-md text-sm z-50">
+              <ul className="hidden group-hover:block absolute top-10 right-0 bg-white shadow border py-2 w-40 rounded-md text-sm z-50">
+                <li onClick={() => navigate("/profile")} className="px-3 py-2 hover:bg-primary/10 cursor-pointer">
+                  My Profile
+                </li>
                 <li onClick={() => navigate("/my-orders")} className="px-3 py-2 hover:bg-primary/10 cursor-pointer">
                   My Orders
                 </li>
@@ -1153,9 +1156,14 @@ const Navbar = () => {
             </NavLink>
 
             {user && (
-              <NavLink to="/my-orders" onClick={() => setOpen(false)}>
-                My Orders
-              </NavLink>
+              <>
+                <NavLink to="/profile" onClick={() => setOpen(false)}>
+                  My Profile
+                </NavLink>
+                <NavLink to="/my-orders" onClick={() => setOpen(false)}>
+                  My Orders
+                </NavLink>
+              </>
             )}
 
             <a

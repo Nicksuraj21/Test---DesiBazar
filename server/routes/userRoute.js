@@ -58,7 +58,8 @@ import {
   isAuth,
   logout,
   registerUser,
-  loginUser   // 👈 add this
+  loginUser,
+  updateProfile,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 
@@ -69,6 +70,7 @@ userRouter.post("/send-otp", sendOtp);
 userRouter.post("/verify-otp", verifyOtp);
 
 userRouter.get("/is-auth", authUser, isAuth);
+userRouter.patch("/profile", authUser, updateProfile);
 userRouter.get("/logout", authUser, logout);
 
 userRouter.post("/login", loginUser);
