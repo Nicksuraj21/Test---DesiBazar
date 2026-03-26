@@ -2060,9 +2060,9 @@ const Orders = () => {
               <p><span>Subtotal</span><span>₹${subtotal}</span></p>
               <p><span>Discount</span><span>- ₹${discount}</span></p>
               <p><span>Delivery</span><span>${deliveryCharge === 0 ? "Free" : "₹" + deliveryCharge}</span></p>
-              ${rewardUsed > 0 ? `<p><span>Reward points redeemed (1 pt = ₹1)</span><span>− ₹${rewardUsed}</span></p>` : ""}
+              ${rewardUsed > 0 ? `<p><span>Reward points redeemed</span><span>− ₹${rewardUsed}</span></p>` : ""}
               <p class="total"><span>Total payable</span><span>₹${order.amount}</span></p>
-              ${pointsEarned > 0 ? `<p style="font-size:11px;color:#666;margin-top:6px;"><span>Customer reward points earned on this order</span><span>${pointsEarned} pts</span></p>` : ""}
+              ${pointsEarned > 0 ? `<p style="font-size:11px;color:#666;margin-top:6px;"><span>Reward points earned</span><span>${pointsEarned} pts</span></p>` : ""}
             </div>
           </div>
 
@@ -2381,7 +2381,7 @@ const Orders = () => {
                 </p>
                 {(order.rewardPointsUsed || 0) > 0 && (
                   <p className="text-xs text-amber-800 font-medium">
-                    −{currency}{order.rewardPointsUsed} via reward points
+                    {/* −{currency}{order.rewardPointsUsed} via reward points */}
                   </p>
                 )}
                 <p className="text-xs text-gray-500">

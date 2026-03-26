@@ -2132,7 +2132,7 @@ const MyOrders = () => {
 
                             {(order.rewardPointsUsed || 0) > 0 && (
                                 <div className="flex justify-between text-amber-800">
-                                    <p>Reward points used (1 pt = ₹1)</p>
+                                    <p>Reward points used</p>
                                     <p>-{currency}{order.rewardPointsUsed}</p>
                                 </div>
                             )}
@@ -2148,7 +2148,7 @@ const MyOrders = () => {
                                     <span className="font-medium text-amber-800 tabular-nums">
                                         {Math.floor(Number(order.amount) / 50)} pts
                                     </span>
-                                    {" "}(₹50 spent = 1 pt)
+                                    {" "}
                                 </p>
                             )}
                         </div>
