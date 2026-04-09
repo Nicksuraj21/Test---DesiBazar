@@ -677,6 +677,7 @@
 import React from "react";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
+import { buildProductDetailPath } from "../utils/slugify";
 
 const ProductCard = ({ product }) => {
   const { currency, addToCart, removeFromCart, cartItems, navigate } = useAppContext();
@@ -691,7 +692,7 @@ const ProductCard = ({ product }) => {
   return (
     <div
       onClick={() => {
-        navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
+        navigate(buildProductDetailPath(product.category, product.name, product._id));
         scrollTo(0, 0);
       }}
       className="bg-white rounded-2xl border border-gray-200 

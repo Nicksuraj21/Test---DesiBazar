@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
+import { buildProductDetailPath } from "../utils/slugify";
 
 const Cart = () => {
     const {
@@ -602,7 +603,7 @@ const Cart = () => {
                             <div className="flex items-center gap-4">
                                 <div
                                     onClick={() => {
-                                        navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
+                                        navigate(buildProductDetailPath(product.category, product.name, product._id));
                                         scrollTo(0, 0);
                                     }}
                                     className="cursor-pointer w-24 h-24 border border-gray-200 rounded-lg bg-white flex items-center justify-center"

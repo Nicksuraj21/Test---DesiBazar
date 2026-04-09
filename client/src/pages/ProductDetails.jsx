@@ -444,11 +444,19 @@ import { useAppContext } from "../context/AppContext";
 import { Link, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
+import { extractProductIdFromSlugParam } from "../utils/slugify";
 
 const ProductDetails = () => {
 
     const { products, navigate, currency, addToCart } = useAppContext()
-    const { id } = useParams()
+    const { slug } = useParams()
+
+    const productId = (() => {
+        if (slug != null && String(slug).trim() !== "") {
+            return extractProductIdFromSlugParam(slug);
+        }
+        return "";
+    })()
 
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [recommendedProducts, setRecommendedProducts] = useState([]);
@@ -456,7 +464,9 @@ const ProductDetails = () => {
     const [recentProducts, setRecentProducts] = useState([]);   // NEW
     const [thumbnail, setThumbnail] = useState(null);
 
-    const product = products.find((item) => item._id === id);
+    const product = productId
+        ? products.find((item) => item._id === productId)
+        : undefined;
 
 
 
