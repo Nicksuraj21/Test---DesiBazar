@@ -603,7 +603,7 @@ const Cart = () => {
                             <div className="flex items-center gap-4">
                                 <div
                                     onClick={() => {
-                                        navigate(buildProductDetailPath(product.category, product.name, product._id));
+                                        navigate(buildProductDetailPath(product.category, product.name, product._id, products));
                                         scrollTo(0, 0);
                                     }}
                                     className="cursor-pointer w-24 h-24 border border-gray-200 rounded-lg bg-white flex items-center justify-center"

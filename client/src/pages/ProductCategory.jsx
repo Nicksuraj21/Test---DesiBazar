@@ -3,15 +3,20 @@ import { useAppContext } from '../context/AppContext'
 import { useParams } from 'react-router-dom'
 import { categories } from '../assets/assets'
 import ProductCard from '../components/ProductCard'
+import { categoryMatches, slugify } from '../utils/slugify'
 
 const ProductCategory = () => {
 
     const { products } =  useAppContext()
     const { category } = useParams()
 
-    const searchCategory = categories.find((item)=> item.path.toLowerCase() === category)
+    const searchCategory = categories.find(
+        (item) =>
+            slugify(item.path) === slugify(category) ||
+            item.path.toLowerCase() === String(category ?? '').toLowerCase()
+    )
 
-    const filteredProducts = products.filter((product)=>product.category.toLowerCase() === category)
+    const filteredProducts = products.filter((product) => categoryMatches(product.category, category))
 
   return (
     <div className='mt-16'>

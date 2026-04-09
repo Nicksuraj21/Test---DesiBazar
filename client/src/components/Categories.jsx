@@ -50,6 +50,7 @@
 import React from 'react'
 import { categories } from '../assets/assets'
 import { useAppContext } from '../context/AppContext'
+import { slugify } from '../utils/slugify'
 
 const Categories = () => {
 
@@ -85,7 +86,7 @@ const Categories = () => {
             '
             style={{ backgroundColor: category.bgColor }}
             onClick={() => {
-              navigate(`/products/${category.path.toLowerCase()}`);
+              navigate(`/products/${slugify(category.path)}`);
               scrollTo(0, 0)
             }}
           >

@@ -444,19 +444,12 @@ import { useAppContext } from "../context/AppContext";
 import { Link, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
-import { extractProductIdFromSlugParam } from "../utils/slugify";
+import { resolveProductFromRoute, slugify } from "../utils/slugify";
 
 const ProductDetails = () => {
 
     const { products, navigate, currency, addToCart } = useAppContext()
-    const { slug } = useParams()
-
-    const productId = (() => {
-        if (slug != null && String(slug).trim() !== "") {
-            return extractProductIdFromSlugParam(slug);
-        }
-        return "";
-    })()
+    const { category, slug } = useParams()
 
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [recommendedProducts, setRecommendedProducts] = useState([]);
@@ -464,9 +457,7 @@ const ProductDetails = () => {
     const [recentProducts, setRecentProducts] = useState([]);   // NEW
     const [thumbnail, setThumbnail] = useState(null);
 
-    const product = productId
-        ? products.find((item) => item._id === productId)
-        : undefined;
+    const product = resolveProductFromRoute(category, slug, products);
 
 
 
@@ -585,7 +576,7 @@ const ProductDetails = () => {
             <p>
                 <Link to={"/"}>Home</Link> /
                 <Link to={"/products"}> Products</Link> /
-                <Link to={`/products/${product.category.toLowerCase()}`}> {product.category}</Link> /
+                <Link to={`/products/${slugify(product.category)}`}> {product.category}</Link> /
                 <span className="text-primary"> {product.name}</span>
             </p>
 

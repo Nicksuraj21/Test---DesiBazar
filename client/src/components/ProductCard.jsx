@@ -680,7 +680,7 @@ import { useAppContext } from "../context/AppContext";
 import { buildProductDetailPath } from "../utils/slugify";
 
 const ProductCard = ({ product }) => {
-  const { currency, addToCart, removeFromCart, cartItems, navigate } = useAppContext();
+  const { currency, addToCart, removeFromCart, cartItems, navigate, products } = useAppContext();
 
   if (!product) return null;
 
@@ -692,7 +692,7 @@ const ProductCard = ({ product }) => {
   return (
     <div
       onClick={() => {
-        navigate(buildProductDetailPath(product.category, product.name, product._id));
+        navigate(buildProductDetailPath(product.category, product.name, product._id, products));
         scrollTo(0, 0);
       }}
       className="bg-white rounded-2xl border border-gray-200 
