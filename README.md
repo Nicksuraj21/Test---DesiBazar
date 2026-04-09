@@ -41,14 +41,14 @@ cd Test---DesiBazar
 
 cd server
 npm install
-# copy .env.example → .env and fill it
+# create server/.env with the variables listed below
 
 cd ../client
 npm install
 # add .env with VITE_* vars (see below)
 ```
 
-**Server** (`server/.env` — start from `.env.example`):
+**Server** (`server/.env`):
 
 - `JWT_SECRET`, `MONGODB_URI`
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
