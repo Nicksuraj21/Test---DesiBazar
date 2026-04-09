@@ -306,7 +306,7 @@ export const AppContextProvider = ({ children }) => {
         }
     });
 
-    const [searchQuery, setSearchQuery] = useState({});
+    const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [cartReady, setCartReady] = useState(false);
 
