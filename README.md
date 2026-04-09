@@ -4,6 +4,8 @@
 
 DesiBazar is a quick-commerce platform helping local shop owners manage orders and deliveries digitally. Built specifically for small towns and villages where tools like Zepto/Blinkit don’t reach.
 
+Website: https://desibazar.online
+
 Grocery-style ecommerce app — React storefront on the left, Express API on the right. Cart, checkout with Razorpay, orders, addresses, Google login, and a seller panel where you can list products (images go through Cloudinary). There’s also an AI marketing page for sellers that hits OpenAI when you’ve got a key; if not, it still returns sensible fallback copy.
 
 Stack in one line: **React 19 + Vite 6 + Tailwind 4** / **Express + Mongoose**. PWA is wired up with `vite-plugin-pwa` so you can install it on a phone if you want.
