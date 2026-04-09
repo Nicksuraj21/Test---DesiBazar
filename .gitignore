@@ -1,1 +1,7 @@
 node_modules
+
+# Secrets — do not commit (use .env.example as a template only)
+.env
+client/.env
+server/.env
+*.local
