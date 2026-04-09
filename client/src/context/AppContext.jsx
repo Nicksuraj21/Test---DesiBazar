@@ -199,13 +199,28 @@
 
 // ✅ Updated AppContext (Only Cart Refresh Fix Added)
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 
+const FALLBACK_BACKEND_URL = "http://localhost:4000";
+
+const resolveApiBaseUrl = () => {
+    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    if (envUrl == null || String(envUrl).trim() === "") {
+        console.error(
+            "[DesiBazar] VITE_BACKEND_URL is undefined or empty; using fallback:",
+            FALLBACK_BACKEND_URL
+        );
+        return String(FALLBACK_BACKEND_URL).replace(/\/$/, "");
+    }
+    return String(envUrl).replace(/\/$/, "");
+};
+
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+axios.defaults.baseURL = resolveApiBaseUrl();
+console.log("[DesiBazar] axios baseURL:", axios.defaults.baseURL);
 
 export const AppContext = createContext();
 
@@ -270,6 +285,11 @@ export const AppContextProvider = ({ children }) => {
     const [sellerLoading, setSellerLoading] = useState(true);
     const [showUserLogin, setShowUserLogin] = useState(false);
     const [products, setProducts] = useState([]);
+    const [productsLoading, setProductsLoading] = useState(true);
+    const [productsError, setProductsError] = useState(false);
+    const [productsRetrying, setProductsRetrying] = useState(false);
+
+    const latestProductsFetchId = useRef(0);
 
     const [userLocation, setUserLocation] = useState(() => {
 
@@ -434,25 +454,71 @@ export const AppContextProvider = ({ children }) => {
     };
 
     // ==============================
-    // Fetch Products
+    // Fetch Products (retries + latest-request guard)
     // ==============================
-    const fetchProducts = async () => {
-        try {
-            const { data } = await axios.get('/api/product/list');
-            if (data.success) setProducts(data.products);
-        } catch (error) {
-            toast.error(error.message);
+    const fetchProducts = useCallback(async () => {
+        const requestId = ++latestProductsFetchId.current;
+
+        const isLatest = () => requestId === latestProductsFetchId.current;
+
+        setProductsLoading(true);
+        setProductsError(false);
+        setProductsRetrying(false);
+
+        const maxAttempts = 3;
+        let lastErrorMessage = "Failed to load products";
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            if (!isLatest()) return;
+
+            if (attempt > 0) {
+                setProductsRetrying(true);
+                await new Promise((r) => setTimeout(r, 1500));
+                if (!isLatest()) return;
+                setProductsRetrying(false);
+            }
+
+            try {
+                console.log("[products] API start, attempt", attempt + 1);
+                const { data } = await axios.get("/api/product/list");
+
+                if (!isLatest()) return;
+
+                if (data?.success && Array.isArray(data.products)) {
+                    setProducts(data.products);
+                    setProductsError(false);
+                    console.log("[products] API success, count:", data.products.length);
+                    if (!isLatest()) return;
+                    setProductsLoading(false);
+                    setProductsRetrying(false);
+                    return;
+                }
+
+                console.error("[products] API response success=false or invalid payload");
+                lastErrorMessage = "Could not load product list";
+            } catch (error) {
+                if (!isLatest()) return;
+                const msg = error?.message || "Network Error";
+                lastErrorMessage = msg;
+                console.error("[products] API error:", msg);
+            }
         }
-    };
+
+        if (!isLatest()) return;
+
+        setProductsError(true);
+        toast.error(lastErrorMessage);
+        setProductsLoading(false);
+        setProductsRetrying(false);
+    }, []);
 
     // ==============================
-    // Initial Load
+    // Initial Load (user + seller + location)
     // ==============================
     useEffect(() => {
 
         fetchUser();
         fetchSeller();
-        fetchProducts();
 
         if (!userLocation) {
             requestLocation();
@@ -460,11 +526,18 @@ export const AppContextProvider = ({ children }) => {
 
     }, []);
 
+    // ==============================
+    // Products: single fetch on mount (no focus refetch)
+    // ==============================
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
     useEffect(() => {
 
         const handleFocus = () => {
 
-            fetchProducts();
+            // fetchProducts() disabled temporarily — was causing duplicate / unstable loads
 
             // 🔥 points/rewards instant sync when user returns
             syncUserFromServer();
@@ -651,6 +724,9 @@ export const AppContextProvider = ({ children }) => {
         showUserLogin,
         setShowUserLogin,
         products,
+        productsLoading,
+        productsError,
+        productsRetrying,
         currency,
         addToCart,
         updateCartItem,

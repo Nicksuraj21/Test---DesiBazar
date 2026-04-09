@@ -27,7 +27,14 @@ function compareInSection(a, b, sortBy, orderIndex) {
 
 const AllProducts = () => {
 
-    const { products, searchQuery } = useAppContext()
+    const {
+        products,
+        searchQuery,
+        productsLoading,
+        productsError,
+        productsRetrying,
+        fetchProducts,
+    } = useAppContext()
     const [sortBy, setSortBy] = useState('default')
 
     const query = typeof searchQuery === 'string' ? searchQuery.trim() : ''
@@ -100,6 +107,7 @@ const AllProducts = () => {
           <div className='w-16 h-0.5 bg-primary rounded-full'></div>
         </div>
 
+        {!productsLoading && !productsError && (
         <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto'>
           <p className='text-sm text-gray-600 order-2 sm:order-1'>
             {totalFiltered} {totalFiltered === 1 ? 'product' : 'products'}
@@ -122,9 +130,32 @@ const AllProducts = () => {
             </select>
           </label>
         </div>
+        )}
       </div>
 
-        {totalFiltered === 0 ? (
+        {productsLoading && (
+          <div className='flex flex-col items-center justify-center min-h-[40vh] mt-10 gap-2'>
+            <p className='text-lg text-gray-700'>Loading products…</p>
+            {productsRetrying && (
+              <p className='text-sm text-gray-500'>Retrying…</p>
+            )}
+          </div>
+        )}
+
+        {!productsLoading && productsError && (
+          <div className='flex flex-col items-center justify-center min-h-[40vh] mt-10 gap-4'>
+            <p className='text-lg text-center text-gray-700'>Failed to load products.</p>
+            <button
+              type='button'
+              onClick={() => fetchProducts()}
+              className='px-6 py-2 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 transition'
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!productsLoading && !productsError && totalFiltered === 0 ? (
           <div className='flex items-center justify-center min-h-[40vh] mt-8'>
             <p className='text-lg text-center text-gray-600'>
               {query
@@ -132,7 +163,7 @@ const AllProducts = () => {
                 : 'No products yet.'}
             </p>
           </div>
-        ) : (
+        ) : !productsLoading && !productsError ? (
             <div className='flex flex-col gap-10 mt-8'>
               {sections.map((sec) => (
                 <section
@@ -161,7 +192,7 @@ const AllProducts = () => {
                 </section>
               ))}
             </div>
-        )}
+        ) : null}
     </div>
   )
 }
