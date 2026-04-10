@@ -1890,7 +1890,11 @@ const MyOrders = () => {
     }
 
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            setMyOrders([])
+            setLoading(false)
+            return;
+        }
         // first time loader
         fetchMyOrders()
         const interval = setInterval(() => {

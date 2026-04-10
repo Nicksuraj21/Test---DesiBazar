@@ -1039,7 +1039,7 @@ const Navbar = () => {
   return (
     <>
       {/* NAVBAR */}
-      <nav className="sticky top-0 bg-white z-40 flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-b border-gray-300">
+      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-emerald-200/40 bg-white/75 px-6 py-4 shadow-sm shadow-emerald-900/5 backdrop-blur-xl md:px-16 lg:px-24 xl:px-32">
 
         {/* LOGO */}
         <NavLink to="/" onClick={() => setOpen(false)}>
@@ -1062,7 +1062,7 @@ const Navbar = () => {
             Contact
           </a>
 
-          <div className="hidden lg:flex items-center text-sm gap-2 border border-gray-300 px-3 rounded-full">
+          <div className="hidden lg:flex items-center gap-2 rounded-full border border-emerald-200/60 bg-white/50 px-3 text-sm backdrop-blur-sm">
             <input
               onChange={(e) => setSearchQuery(e.target.value)}
               className="py-1.5 w-full bg-transparent outline-none"
@@ -1091,14 +1091,14 @@ const Navbar = () => {
                 setOpen(false);
                 setShowUserLogin(true);
               }}
-              className="px-8 py-2 bg-primary text-white rounded-full"
+              className="rounded-full bg-gradient-to-r from-primary to-primary-dull px-8 py-2 text-white shadow-md shadow-emerald-600/25 transition hover:shadow-lg hover:shadow-emerald-600/30"
             >
               Login
             </button>
           ) : (
             <div className="relative group">
               <img src={assets.profile_icon} className="w-10 cursor-pointer" />
-              <ul className="hidden group-hover:block absolute top-10 right-0 bg-white shadow border py-2 w-40 rounded-md text-sm z-50">
+              <ul className="absolute top-10 right-0 z-50 hidden w-40 rounded-xl border border-emerald-100/60 bg-white/95 py-2 text-sm shadow-xl shadow-emerald-900/10 backdrop-blur-xl group-hover:block">
                 <li onClick={() => navigate("/profile")} className="px-3 py-2 hover:bg-primary/10 cursor-pointer">
                   My Profile
                 </li>
@@ -1147,7 +1147,7 @@ const Navbar = () => {
         {open && (
           <div
             ref={menuRef}
-            className="fixed top-[64px] left-0 w-full bg-white shadow-md py-4 flex flex-col gap-3 px-6 text-sm sm:hidden z-50"
+            className="fixed left-0 top-[64px] z-50 flex w-full flex-col gap-3 border-b border-emerald-100/50 bg-white/95 py-4 text-sm shadow-lg shadow-emerald-900/5 backdrop-blur-xl sm:hidden px-6"
           >
             <NavLink to="/" onClick={() => setOpen(false)}>Home</NavLink>
 
@@ -1181,7 +1181,7 @@ const Navbar = () => {
                   setOpen(false);
                   setShowUserLogin(true);
                 }}
-                className="mt-2 px-6 py-2 bg-primary text-white rounded-full"
+                className="mt-2 rounded-full bg-gradient-to-r from-primary to-primary-dull px-6 py-2 text-white shadow-md shadow-emerald-600/25"
               >
                 Login
               </button>
@@ -1191,7 +1191,7 @@ const Navbar = () => {
                   setOpen(false);
                   logout();
                 }}
-                className="mt-2 px-6 py-2 bg-primary text-white rounded-full"
+                className="mt-2 rounded-full bg-gradient-to-r from-primary to-primary-dull px-6 py-2 text-white shadow-md shadow-emerald-600/25"
               >
                 Logout
               </button>
@@ -1202,10 +1202,10 @@ const Navbar = () => {
 
       {/* SMALL SEARCH POPUP */}
       {showSearch && (
-        <div className="absolute top-[72px] left-0 w-full flex justify-center sm:hidden z-50">
+        <div className="absolute top-[72px] left-0 z-50 flex w-full justify-center sm:hidden">
           <div
             ref={searchRef}
-            className="bg-white w-[92%] border border-gray-200 rounded-full shadow-md px-4 py-3 flex items-center gap-2"
+            className="flex w-[92%] items-center gap-2 rounded-full border border-emerald-100/70 bg-white/90 px-4 py-3 shadow-lg shadow-emerald-900/10 backdrop-blur-md"
           >
             <input
               autoFocus

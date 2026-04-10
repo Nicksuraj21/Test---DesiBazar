@@ -367,10 +367,20 @@ const MainBanner = () => {
     }))
   }
 
+  /* Match dot highlight when showing clone slides at edges */
+  const activeDotIndex =
+    current === 0
+      ? originalBanners.length - 1
+      : current === banners.length - 1
+        ? 0
+        : current - 1
+
   return (
     <div className="w-full mt-6 md:mt-8">
 
-      <div className="relative w-full overflow-hidden">
+      <div
+        className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl md:rounded-[1.75rem] shadow-[0_12px_40px_-12px_rgba(5,150,105,0.25),0_4px_24px_-8px_rgba(15,23,42,0.12)] ring-1 ring-white/50"
+      >
 
         <div
           ref={sliderRef}
@@ -397,7 +407,7 @@ const MainBanner = () => {
                 alt="banner"
                 loading="eager"
                 onLoad={() => handleImageLoad(index)}
-                className={`w-full h-full object-cover transition-opacity duration-500 ${
+                className={`h-full w-full object-cover transition-opacity duration-500 ${
                   loadedImages[index] ? "opacity-100" : "opacity-0"
                 }`}
               />
@@ -407,17 +417,28 @@ const MainBanner = () => {
 
       </div>
 
-      {/* Dots */}
-      <div className="flex justify-center gap-1.5 mt-3">
-        {originalBanners.map((_, index) => (
-          <div
-            key={index}
-            onClick={() => setCurrent(index + 1)}
-            className={`h-2 w-2 rounded-full cursor-pointer transition ${
-              current === index + 1 ? "bg-black scale-110" : "bg-gray-400"
-            }`}
-          />
-        ))}
+      {/* Pagination — subtle dots (not button-y) */}
+      <div className="mt-3 flex justify-center" role="tablist" aria-label="Banner slides">
+        <div className="flex items-center gap-2.5 rounded-full bg-white/55 px-2.5 py-1.5 shadow-sm shadow-emerald-900/5 backdrop-blur-sm">
+          {originalBanners.map((_, index) => {
+            const isActive = activeDotIndex === index
+            return (
+              <button
+                key={index}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`Slide ${index + 1}`}
+                onClick={() => setCurrent(index + 1)}
+                className={`rounded-full transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  isActive
+                    ? "h-1.5 w-4 bg-primary/90 shadow-[0_0_0_3px_rgba(5,150,105,0.12)]"
+                    : "h-1.5 w-1.5 bg-slate-300/90 hover:bg-slate-400"
+                }`}
+              />
+            )
+          })}
+        </div>
       </div>
 
       {/* Hero Text Section */}

@@ -310,7 +310,7 @@ import AIMarketing from './pages/seller/AIMarketing';
 import RewardPoints from './pages/seller/RewardPoints';
 import Loading from './components/Loading';
 import ScrollToTop from './components/ScrollToTop';
-import CartBar from "./components/CartBar"
+import MobileBottomNav from "./components/MobileBottomNav"
 
 const App = () => {
 
@@ -339,24 +339,29 @@ const App = () => {
 
   if (loading || sellerLoading) {
     return (
-      <div className='flex items-center justify-center h-screen'>
-        <Loading />
+      <div className="relative isolate min-h-screen min-h-[100dvh]">
+        <div className="app-page-gradient" aria-hidden="true" />
+        <div className="relative z-[1] flex min-h-screen min-h-[100dvh] items-center justify-center">
+          <Loading />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className='text-default min-h-screen text-gray-700 bg-slate-50 relative'>
+    <div className="text-default relative isolate min-h-screen min-h-[100dvh] text-slate-700">
+      <div className="app-page-gradient" aria-hidden="true" />
 
+      <div className="relative z-[1]">
       {/* 🔥 ROUTE OVERLAY LOADER */}
       {routeLoading && <Loading />}
 
       {!isSellerPath && <Navbar />}
 
       {locationBlocked && showLocationBanner && (
-        <div className="bg-yellow-100 border-b border-yellow-200 px-3 py-1.5 flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between border-b border-amber-200/60 bg-amber-50/90 px-3 py-1.5 text-xs backdrop-blur-md">
 
-          <div className="flex items-center gap-2 text-yellow-800">
+          <div className="flex items-center gap-2 text-amber-900">
             <span>📍</span>
             <span className="font-medium">Enable location For Fast Delivery</span>
           </div>
@@ -373,7 +378,7 @@ const App = () => {
                 () => alert("Please enable location from browser settings")
               );
             }}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-xs font-medium"
+            className="rounded-md bg-amber-500 px-3 py-1 text-xs font-medium text-white shadow-sm shadow-amber-600/20 transition hover:bg-amber-600"
           >
             Allow
           </button>
@@ -385,7 +390,9 @@ const App = () => {
       {showUserLogin && <Login />}
       <Toaster />
 
-      <div className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"}`}>
+      <div
+        className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32 max-md:pb-[6.5rem]"}`}
+      >
         <ScrollToTop />
 
         <Routes>
@@ -412,9 +419,10 @@ const App = () => {
         </Routes>
       </div>
 
-      <CartBar />
+      {!isSellerPath && <MobileBottomNav />}
 
       {!isSellerPath && <Footer />}
+      </div>
     </div>
   );
 };

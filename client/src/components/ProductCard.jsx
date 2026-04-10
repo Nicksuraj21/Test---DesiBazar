@@ -695,9 +695,7 @@ const ProductCard = ({ product }) => {
         navigate(buildProductDetailPath(product.category, product.name, product._id, products));
         scrollTo(0, 0);
       }}
-      className="bg-white rounded-2xl border border-gray-200 
-      p-3 w-full hover:shadow-lg transition duration-200 
-      flex flex-col justify-between cursor-pointer group"
+      className="group flex w-full cursor-pointer flex-col justify-between rounded-2xl border border-emerald-100/70 bg-white/90 p-3 shadow-md shadow-emerald-900/[0.04] backdrop-blur-[2px] transition duration-200 hover:border-emerald-200/90 hover:shadow-xl hover:shadow-emerald-900/[0.08]"
     >
       {/* IMAGE AREA */}
       <div className="relative flex items-center justify-center h-[110px] mb-2">

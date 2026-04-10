@@ -35,7 +35,7 @@ import React from "react";
 
 const Loading = () => {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white/40 backdrop-blur-sm z-50 transition-opacity duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/25 backdrop-blur-[3px] transition-opacity duration-200">
       <div className='animate-spin rounded-full h-24 w-24 border-5 border-gray-300 border-t-primary'></div>
     </div>
   );

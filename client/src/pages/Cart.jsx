@@ -519,7 +519,6 @@ const Cart = () => {
 
     const processOrder = async () => {
         try {
-
             if (paymentOption === "COD") {
 
                 const location = await getOrderLocation();
