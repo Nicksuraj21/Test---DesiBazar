@@ -290,6 +290,7 @@ export const AppContextProvider = ({ children }) => {
     const [productsRetrying, setProductsRetrying] = useState(false);
 
     const latestProductsFetchId = useRef(0);
+    const productsDigestRef = useRef("");
 
     const [userLocation, setUserLocation] = useState(() => {
 
@@ -431,7 +432,7 @@ export const AppContextProvider = ({ children }) => {
     // ==============================
     // 🔥 Instant reward sync (no refresh)
     // ==============================
-    const syncUserFromServer = async () => {
+    const syncUserFromServer = useCallback(async () => {
         try {
             const { data } = await axios.get('/api/user/is-auth');
 
@@ -451,27 +452,46 @@ export const AppContextProvider = ({ children }) => {
         } catch {
             // Silent fail: auth cookie invalid/expired ho sakti hai
         }
-    };
+    }, []);
+
+    const getProductsDigest = (list = []) =>
+        list
+            .map(
+                (p) =>
+                    `${p?._id || ""}:${p?.offerPrice ?? ""}:${p?.price ?? ""}:${p?.updatedAt || ""}:${p?.inStock ? 1 : 0}`
+            )
+            .join("|");
+
+    const applyProductsIfChanged = useCallback((nextProducts) => {
+        const nextDigest = getProductsDigest(nextProducts);
+        if (nextDigest === productsDigestRef.current) return false;
+        productsDigestRef.current = nextDigest;
+        setProducts(nextProducts);
+        return true;
+    }, []);
 
     // ==============================
-    // Fetch Products (retries + latest-request guard)
+    // Fetch Products (normal + silent background refresh)
     // ==============================
-    const fetchProducts = useCallback(async () => {
+    const fetchProducts = useCallback(async (options = {}) => {
+        const { silent = false } = options;
         const requestId = ++latestProductsFetchId.current;
 
         const isLatest = () => requestId === latestProductsFetchId.current;
 
-        setProductsLoading(true);
-        setProductsError(false);
-        setProductsRetrying(false);
+        if (!silent) {
+            setProductsLoading(true);
+            setProductsError(false);
+            setProductsRetrying(false);
+        }
 
-        const maxAttempts = 3;
+        const maxAttempts = silent ? 1 : 3;
         let lastErrorMessage = "Failed to load products";
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             if (!isLatest()) return;
 
-            if (attempt > 0) {
+            if (!silent && attempt > 0) {
                 setProductsRetrying(true);
                 await new Promise((r) => setTimeout(r, 1500));
                 if (!isLatest()) return;
@@ -485,12 +505,14 @@ export const AppContextProvider = ({ children }) => {
                 if (!isLatest()) return;
 
                 if (data?.success && Array.isArray(data.products)) {
-                    setProducts(data.products);
+                    applyProductsIfChanged(data.products);
                     setProductsError(false);
                     console.log("[products] API success, count:", data.products.length);
                     if (!isLatest()) return;
-                    setProductsLoading(false);
-                    setProductsRetrying(false);
+                    if (!silent) {
+                        setProductsLoading(false);
+                        setProductsRetrying(false);
+                    }
                     return;
                 }
 
@@ -506,11 +528,13 @@ export const AppContextProvider = ({ children }) => {
 
         if (!isLatest()) return;
 
-        setProductsError(true);
-        toast.error(lastErrorMessage);
-        setProductsLoading(false);
-        setProductsRetrying(false);
-    }, []);
+        if (!silent) {
+            setProductsError(true);
+            toast.error(lastErrorMessage);
+            setProductsLoading(false);
+            setProductsRetrying(false);
+        }
+    }, [applyProductsIfChanged]);
 
     // ==============================
     // Initial Load (user + seller + location)
@@ -527,7 +551,7 @@ export const AppContextProvider = ({ children }) => {
     }, []);
 
     // ==============================
-    // Products: single fetch on mount (no focus refetch)
+    // Products: initial fetch
     // ==============================
     useEffect(() => {
         fetchProducts();
@@ -537,7 +561,8 @@ export const AppContextProvider = ({ children }) => {
 
         const handleFocus = () => {
 
-            // fetchProducts() disabled temporarily — was causing duplicate / unstable loads
+            // Background refresh products so seller price updates reflect without manual reload
+            fetchProducts({ silent: true });
 
             // 🔥 points/rewards instant sync when user returns
             syncUserFromServer();
@@ -553,7 +578,30 @@ export const AppContextProvider = ({ children }) => {
             window.removeEventListener("focus", handleFocus);
         };
 
-    }, []);
+    }, [fetchProducts, syncUserFromServer]);
+
+    useEffect(() => {
+        const handleVisible = () => {
+            if (document.visibilityState === "visible") {
+                fetchProducts({ silent: true });
+                syncUserFromServer();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisible);
+        return () => document.removeEventListener("visibilitychange", handleVisible);
+    }, [fetchProducts, syncUserFromServer]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                fetchProducts({ silent: true });
+                syncUserFromServer();
+            }
+        }, 15000);
+
+        return () => clearInterval(interval);
+    }, [fetchProducts, syncUserFromServer]);
 
 
 
@@ -575,21 +623,6 @@ export const AppContextProvider = ({ children }) => {
 
     }, []);
 
-
-    // ==============================
-    // 🔄 Reward points auto-update
-    // ==============================
-    useEffect(() => {
-        if (!user) return;
-
-        const interval = setInterval(() => {
-            if (document.visibilityState === "visible") {
-                syncUserFromServer();
-            }
-        }, 60000); // 60s
-
-        return () => clearInterval(interval);
-    }, [user]);
 
     useEffect(() => {
 

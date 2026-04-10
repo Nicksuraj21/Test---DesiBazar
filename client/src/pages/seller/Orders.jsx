@@ -1888,7 +1888,7 @@
 
 
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppContext } from '../../context/AppContext'
 import { assets } from '../../assets/assets'
 import toast from 'react-hot-toast'
@@ -2090,8 +2090,10 @@ const Orders = () => {
 
 
   const { currency, axios } = useAppContext()
+  const SELLER_ORDERS_CACHE_KEY = "desibazar_seller_orders_cache_v1"
 
   const [orders, setOrders] = useState([])
+  const [ordersBooting, setOrdersBooting] = useState(true)
   // const [lastCount, setLastCount] = useState(0)
 
 
@@ -2178,11 +2180,30 @@ const Orders = () => {
     })
   }
 
+  const hydrateOrdersCache = useCallback(() => {
+    try {
+      const raw = sessionStorage.getItem(SELLER_ORDERS_CACHE_KEY)
+      if (!raw) return false
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed?.orders)) return false
+      if (Date.now() - (parsed?.time || 0) > 60000) return false
+
+      setOrders(parsed.orders)
+      lastCountRef.current = parsed.orders.length
+      calculateStats(parsed.orders, filter)
+      return true
+    } catch {
+      return false
+    }
+  }, [filter])
+
   // =========================
   // FETCH ORDERS
   // =========================
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async (options = {}) => {
+    const { silent = false } = options
     try {
+      if (!silent) setOrdersBooting(true)
       const { data } = await axios.get('/api/order/seller')
 
       if (data.success) {
@@ -2202,24 +2223,39 @@ const Orders = () => {
 
 
         setOrders(allOrders)
+        sessionStorage.setItem(
+          SELLER_ORDERS_CACHE_KEY,
+          JSON.stringify({ orders: allOrders, time: Date.now() })
+        )
 
         calculateStats(allOrders, filter)
       }
 
     } catch (error) {
-      toast.error(error.message)
+      if (!silent) toast.error(error.message)
+    } finally {
+      if (!silent) setOrdersBooting(false)
     }
-  }
+  }, [axios, filter])
 
   useEffect(() => {
-    fetchOrders()
-    const interval = setInterval(fetchOrders, 4000)
+    const hasCache = hydrateOrdersCache()
+    fetchOrders({ silent: hasCache })
+    const interval = setInterval(() => fetchOrders({ silent: true }), 4000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchOrders, hydrateOrdersCache])
 
   useEffect(() => {
     calculateStats(orders, filter)
   }, [filter, orders])
+
+  const filteredOrders = useMemo(
+    () =>
+      orders.filter(order =>
+        order._id.toLowerCase().includes(search.toLowerCase())
+      ),
+    [orders, search]
+  )
 
 
   // =========================
@@ -2339,11 +2375,16 @@ const Orders = () => {
 
         <h2 className="text-lg font-medium">Orders List</h2>
 
-        {orders
-          .filter(order =>
-            order._id.toLowerCase().includes(search.toLowerCase())
-          )
-          .map((order) => (
+        {ordersBooting && orders.length === 0 && (
+          <div className="max-w-4xl rounded-md border border-gray-300 bg-white p-5">
+            <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
+            <div className="mt-3 h-3 w-72 animate-pulse rounded bg-gray-100" />
+            <div className="mt-2 h-3 w-64 animate-pulse rounded bg-gray-100" />
+            <div className="mt-4 h-8 w-32 animate-pulse rounded bg-gray-100" />
+          </div>
+        )}
+
+        {filteredOrders.map((order) => (
             <div key={order._id}
               className="flex flex-col md:flex-row gap-5 justify-between p-5 max-w-4xl rounded-md border border-gray-300">
 
