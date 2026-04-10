@@ -199,7 +199,7 @@
 
 // ✅ Updated AppContext (Only Cart Refresh Fix Added)
 
-import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -648,7 +648,7 @@ export const AppContextProvider = ({ children }) => {
     // ==============================
     // CART FUNCTIONS
     // ==============================
-    const addToCart = (itemId) => {
+    const addToCart = useCallback((itemId) => {
 
         setCartItems(prev => {
 
@@ -661,9 +661,9 @@ export const AppContextProvider = ({ children }) => {
         });
 
         toast.success("Added to Cart");
-    };
+    }, [setCartItems]);
 
-    const updateCartItem = (itemId, quantity) => {
+    const updateCartItem = useCallback((itemId, quantity) => {
 
         setCartItems(prev => {
 
@@ -675,9 +675,9 @@ export const AppContextProvider = ({ children }) => {
 
         });
 
-    };
+    }, [setCartItems]);
 
-    const removeFromCart = (itemId) => {
+    const removeFromCart = useCallback((itemId) => {
 
         setCartItems(prev => {
 
@@ -693,12 +693,14 @@ export const AppContextProvider = ({ children }) => {
 
         });
 
-    };
+    }, [setCartItems]);
 
-    const getCartCount = () =>
-        Object.values(cartItems).reduce((a, b) => a + b, 0);
+    const getCartCount = useCallback(
+        () => Object.values(cartItems).reduce((a, b) => a + b, 0),
+        [cartItems]
+    );
 
-    const getCartAmount = () => {
+    const getCartAmount = useCallback(() => {
 
         let total = 0;
 
@@ -712,40 +714,66 @@ export const AppContextProvider = ({ children }) => {
 
         return total;
 
-    };
+    }, [cartItems, products]);
 
-    const value = {
-        navigate,
-        user,
-        setUser,
-        isSeller,
-        setIsSeller,
-        sellerLoading,
-        showUserLogin,
-        setShowUserLogin,
-        products,
-        productsLoading,
-        productsError,
-        productsRetrying,
-        currency,
-        addToCart,
-        updateCartItem,
-        removeFromCart,
-        cartItems,
-        searchQuery,
-        setSearchQuery,
-        getCartAmount,
-        getCartCount,
-        axios,
-        fetchProducts,
-        setCartItems,
-        loading,
-        userLocation,
-        setUserLocation,
-        getUserLocation,
-        locationBlocked,
-        requestLocation
-    };
+    const value = useMemo(
+        () => ({
+            navigate,
+            user,
+            setUser,
+            isSeller,
+            setIsSeller,
+            sellerLoading,
+            showUserLogin,
+            setShowUserLogin,
+            products,
+            productsLoading,
+            productsError,
+            productsRetrying,
+            currency,
+            addToCart,
+            updateCartItem,
+            removeFromCart,
+            cartItems,
+            searchQuery,
+            setSearchQuery,
+            getCartAmount,
+            getCartCount,
+            axios,
+            fetchProducts,
+            setCartItems,
+            loading,
+            userLocation,
+            setUserLocation,
+            getUserLocation,
+            locationBlocked,
+            requestLocation
+        }),
+        [
+            navigate,
+            user,
+            isSeller,
+            sellerLoading,
+            showUserLogin,
+            products,
+            productsLoading,
+            productsError,
+            productsRetrying,
+            currency,
+            addToCart,
+            updateCartItem,
+            removeFromCart,
+            cartItems,
+            searchQuery,
+            getCartAmount,
+            getCartCount,
+            fetchProducts,
+            loading,
+            userLocation,
+            locationBlocked,
+            requestLocation
+        ]
+    );
 
     return (
         <AppContext.Provider value={value}>
