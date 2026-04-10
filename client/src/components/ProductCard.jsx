@@ -674,22 +674,15 @@
 
 
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 import { buildProductDetailPath } from "../utils/slugify";
 
 const ProductCard = ({ product }) => {
   const { currency, addToCart, removeFromCart, cartItems, navigate, products } = useAppContext();
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   if (!product) return null;
-
-  useEffect(() => {
-    setImageLoaded(false);
-  }, [product?._id, product?.image?.[0]]);
-
-  const imageOpacityClass = !imageLoaded ? "opacity-0" : product.inStock ? "opacity-100" : "opacity-40";
 
   const qty = cartItems[product._id] || 0;
   const discount = Math.round(
@@ -705,7 +698,7 @@ const ProductCard = ({ product }) => {
       className="group flex w-full cursor-pointer flex-col justify-between rounded-2xl border border-emerald-100/70 bg-white/90 p-3 shadow-md shadow-emerald-900/[0.04] backdrop-blur-[2px] transition duration-200 hover:border-emerald-200/90 hover:shadow-xl hover:shadow-emerald-900/[0.08]"
     >
       {/* IMAGE AREA */}
-      <div className="relative flex items-center justify-center h-[110px] mb-2 overflow-hidden rounded-xl bg-slate-50">
+      <div className="relative flex items-center justify-center h-[110px] mb-2">
 
         {/* discount badge */}
         {discount > 0 && (
@@ -719,17 +712,9 @@ const ProductCard = ({ product }) => {
         <img
           src={product.image[0]}
           alt={product.name}
-          loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageLoaded(true)}
           className={`max-h-[90px] object-contain transition duration-200
-          ${imageOpacityClass}
-          ${product.inStock ? "group-hover:scale-105" : ""}`}
+          ${product.inStock ? "group-hover:scale-105" : "opacity-40"}`}
         />
-
-        {!imageLoaded && (
-          <div className="card-image-skeleton absolute inset-0" aria-hidden />
-        )}
 
         {/* out of stock */}
         {!product.inStock && (
