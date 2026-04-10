@@ -39,6 +39,8 @@ const Cart = () => {
 
     // ✅ NEW STATE (ONLY ADDITION)
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+    /** Sync guard: state updates async, so double-clicks can still fire twice without this */
+    const placeOrderInFlightRef = useRef(false);
     const [isLocating, setIsLocating] = useState(false); // 👈 ADD THIS
     const [isLiveSharing, setIsLiveSharing] = useState(false);
     const liveWatchIdRef = useRef(null);
@@ -369,6 +371,17 @@ const Cart = () => {
                 return;
             }
 
+            let checkoutFinished = false;
+            let resolveCheckout;
+            const checkoutClosed = new Promise((resolve) => {
+                resolveCheckout = resolve;
+            });
+            const finishCheckout = () => {
+                if (checkoutFinished) return;
+                checkoutFinished = true;
+                resolveCheckout();
+            };
+
             // 🔥 RAZORPAY POPUP
             const options = {
                 key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -415,6 +428,14 @@ const Cart = () => {
 
                     } catch (err) {
                         toast.error("Payment verify error");
+                    } finally {
+                        finishCheckout();
+                    }
+                },
+
+                modal: {
+                    ondismiss: () => {
+                        finishCheckout();
                     }
                 },
 
@@ -429,9 +450,13 @@ const Cart = () => {
 
             const rzp = new window.Razorpay(options);
 
-            setIsPlacingOrder(false);
+            rzp.on("payment.failed", () => {
+                finishCheckout();
+            });
 
             rzp.open();
+
+            await checkoutClosed;
 
         } catch (error) {
             console.log(error);
@@ -449,7 +474,7 @@ const Cart = () => {
             return;
         }
 
-        if (isPlacingOrder) return;
+        if (placeOrderInFlightRef.current || isPlacingOrder) return;
 
         if (!user) {
             toast.error("Please login first");
@@ -463,6 +488,7 @@ const Cart = () => {
             return;
         }
 
+        placeOrderInFlightRef.current = true;
         setIsPlacingOrder(true);
 
         // 🔥 background order
@@ -539,6 +565,7 @@ const Cart = () => {
         } catch (error) {
             toast.error("Order failed");
         } finally {
+            placeOrderInFlightRef.current = false;
             setIsPlacingOrder(false);
         }
     };
