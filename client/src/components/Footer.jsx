@@ -61,7 +61,7 @@ import { assets, footerLinks } from "../assets/assets";
 
 const Footer = () => {
   return (
-    <div className="relative mt-24 rounded-t-[2rem] border-t border-white/50 bg-white/50 px-6 pb-8 backdrop-blur-md max-md:pb-24 md:px-16 lg:px-24 xl:px-32">
+    <div className="relative mt-24 rounded-t-[2rem] border-t border-white/50 bg-white/80 px-6 pb-8 backdrop-blur-none max-md:pb-24 md:bg-white/50 md:backdrop-blur-md md:px-16 lg:px-24 xl:px-32">
       <div className="flex flex-col items-start justify-between gap-10 border-b border-emerald-200/30 py-10 text-slate-600 md:flex-row">
         
         {/* LEFT */}

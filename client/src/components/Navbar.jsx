@@ -1039,7 +1039,7 @@ const Navbar = () => {
   return (
     <>
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-emerald-200/40 bg-white/75 px-6 py-4 shadow-sm shadow-emerald-900/5 backdrop-blur-xl md:px-16 lg:px-24 xl:px-32">
+      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-emerald-200/40 bg-white/90 px-6 py-4 shadow-sm shadow-emerald-900/5 backdrop-blur-none md:bg-white/75 md:backdrop-blur-xl md:px-16 lg:px-24 xl:px-32">
 
         {/* LOGO */}
         <NavLink to="/" onClick={() => setOpen(false)}>

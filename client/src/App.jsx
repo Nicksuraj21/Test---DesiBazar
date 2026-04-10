@@ -286,7 +286,7 @@
 
 
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import Navbar from './components/Navbar'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
@@ -319,23 +319,8 @@ const App = () => {
   const showLocationBanner =
     location.pathname === "/" || location.pathname === "/cart";
 
-  const [routeLoading, setRouteLoading] = useState(false);
-
   const isSellerPath = location.pathname.includes("seller");
   const { showUserLogin, isSeller, loading, sellerLoading, locationBlocked } = useAppContext();
-
-  // 🔥 Route change loader
-  useEffect(() => {
-
-    setRouteLoading(true)
-
-    const timer = setTimeout(() => {
-      setRouteLoading(false)
-    }, 250)
-
-    return () => clearTimeout(timer)
-
-  }, [location.pathname])
 
   if (loading || sellerLoading) {
     return (
@@ -353,13 +338,11 @@ const App = () => {
       <div className="app-page-gradient" aria-hidden="true" />
 
       <div className="relative z-[1]">
-      {/* 🔥 ROUTE OVERLAY LOADER */}
-      {routeLoading && <Loading />}
 
       {!isSellerPath && <Navbar />}
 
       {locationBlocked && showLocationBanner && (
-        <div className="flex items-center justify-between border-b border-amber-200/60 bg-amber-50/90 px-3 py-1.5 text-xs backdrop-blur-md">
+        <div className="flex items-center justify-between border-b border-amber-200/60 bg-amber-50 px-3 py-1.5 text-xs">
 
           <div className="flex items-center gap-2 text-amber-900">
             <span>📍</span>

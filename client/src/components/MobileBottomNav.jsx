@@ -78,7 +78,7 @@ const MobileBottomNav = () => {
       aria-label="Main mobile navigation"
     >
       <div className="pointer-events-auto mx-3 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="relative flex w-full max-w-md items-end rounded-[2rem] border border-white/70 bg-white/95 px-1 shadow-[0_8px_32px_-4px_rgba(5,150,105,0.2),0_4px_16px_-4px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+        <div className="relative flex w-full max-w-md items-end rounded-[2rem] border border-white/70 bg-white/98 px-1 shadow-[0_8px_32px_-4px_rgba(5,150,105,0.2),0_4px_16px_-4px_rgba(15,23,42,0.12)]">
           <NavLink to="/" end className={({ isActive }) => tabClass(isActive)}>
             <IconHome className="h-6 w-6 shrink-0" />
             <span className="text-[10px] font-medium leading-none">Home</span>

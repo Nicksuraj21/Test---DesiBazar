@@ -1851,7 +1851,6 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppContext } from '../context/AppContext'
-import Loading from "../components/Loading"
 
 const CANCEL_WINDOW = 2 * 60 * 1000 // 2 minutes
 
@@ -2000,7 +1999,12 @@ const MyOrders = () => {
     return (
         <div className='mt-16 pb-16'>
 
-            {loading && <Loading />}
+            {loading && (
+                <div className="flex min-h-[45vh] flex-col items-center justify-center gap-3 py-12">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary" />
+                    <p className="text-sm text-gray-500">Loading your orders…</p>
+                </div>
+            )}
 
             <div className='flex flex-col items-end w-max mb-8'>
                 <p className='text-2xl font-medium uppercase'>My orders</p>
