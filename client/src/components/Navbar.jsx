@@ -1039,7 +1039,7 @@ const Navbar = () => {
   return (
     <>
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-emerald-200/40 bg-white/90 px-6 py-4 shadow-sm shadow-emerald-900/5 backdrop-blur-none md:bg-white/75 md:backdrop-blur-xl md:px-16 lg:px-24 xl:px-32">
+      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-emerald-200/40 bg-white/90 px-6 pb-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top,0px)))] shadow-sm shadow-emerald-900/5 backdrop-blur-none md:bg-white/75 md:backdrop-blur-xl md:px-16 lg:px-24 xl:px-32">
 
         {/* LOGO */}
         <NavLink to="/" onClick={() => setOpen(false)}>
@@ -1147,7 +1147,7 @@ const Navbar = () => {
         {open && (
           <div
             ref={menuRef}
-            className="fixed left-0 top-[64px] z-50 flex w-full flex-col gap-3 border-b border-emerald-100/50 bg-white/95 py-4 text-sm shadow-lg shadow-emerald-900/5 backdrop-blur-xl sm:hidden px-6"
+            className="fixed left-0 top-[calc(5rem+env(safe-area-inset-top,0px))] z-50 flex w-full flex-col gap-3 border-b border-emerald-100/50 bg-white/95 py-4 text-sm shadow-lg shadow-emerald-900/5 backdrop-blur-xl sm:hidden px-6"
           >
             <NavLink to="/" onClick={() => setOpen(false)}>Home</NavLink>
 
@@ -1202,7 +1202,7 @@ const Navbar = () => {
 
       {/* SMALL SEARCH POPUP */}
       {showSearch && (
-        <div className="absolute top-[72px] left-0 z-50 flex w-full justify-center sm:hidden">
+        <div className="absolute left-0 top-[calc(5.25rem+env(safe-area-inset-top,0px))] z-50 flex w-full justify-center sm:hidden">
           <div
             ref={searchRef}
             className="flex w-[92%] items-center gap-2 rounded-full border border-emerald-100/70 bg-white/90 px-4 py-3 shadow-lg shadow-emerald-900/10 backdrop-blur-md"
