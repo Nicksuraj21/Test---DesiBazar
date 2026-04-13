@@ -146,6 +146,7 @@ import React, { useState } from 'react'
 import { assets, categories } from '../../assets/assets';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
+import CustomSelect from '../../components/CustomSelect';
 
 const AddProduct = () => {
 
@@ -162,6 +163,10 @@ const AddProduct = () => {
     const onSubmitHandler = async (event) => {
         try {
             event.preventDefault();
+            if (!category?.trim()) {
+                toast.error('Please select a category');
+                return;
+            }
 
             const productData = {
                 name,
@@ -274,19 +279,15 @@ const AddProduct = () => {
                 {/* Category */}
                 <div className="w-full flex flex-col gap-1">
                     <label className="text-base font-medium">Category</label>
-                    <select
-                        onChange={(e) => setCategory(e.target.value)}
+                    <CustomSelect
                         value={category}
-                        className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-                        required
-                    >
-                        <option value="">Select Category</option>
-                        {categories.map((item, index) => (
-                            <option key={index} value={item.path}>
-                                {item.path}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={setCategory}
+                        placeholder="Select Category"
+                        options={categories.map((item) => ({ value: item.path, label: item.path }))}
+                        className="w-full max-w-md"
+                        triggerClassName="!rounded-md !border-gray-500/40 md:!py-2.5 !py-2"
+                        aria-label="Product category"
+                    />
                 </div>
 
                 {/* Price Section */}

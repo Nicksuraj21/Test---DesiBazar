@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import CustomSelect from "../../components/CustomSelect";
 import {
   Sparkles,
   Copy,
@@ -304,8 +305,13 @@ Safety/constraints:
     if (autoImagePrompt) setImagePrompt(autoImagePrompt);
   }, [selectedProductId, autoImagePromptEnabled, autoImagePrompt]);
 
-  const selectClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+  const selectTriggerClass =
+    "!w-full !rounded-xl !border-slate-200 !bg-white !px-3 !py-2.5 !text-sm !text-slate-800 focus-visible:!border-primary focus-visible:!ring-2 focus-visible:!ring-primary/20";
+
+  const productOptions = useMemo(
+    () => products.map((p) => ({ value: p._id, label: p.name })),
+    [products]
+  );
 
   return (
     <div className="flex-1 h-[95vh] overflow-y-scroll bg-gradient-to-b from-slate-50 to-white">
@@ -369,17 +375,15 @@ Safety/constraints:
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Product
                   </label>
-                  <select
+                  <CustomSelect
+                    aria-label="Product for campaign"
                     value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className={selectClass}
-                  >
-                    {products.map((p) => (
-                      <option key={p._id} value={p._id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedProductId}
+                    options={productOptions}
+                    placeholder={products.length ? "Select product" : "No products"}
+                    className="w-full"
+                    triggerClassName={selectTriggerClass}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -387,24 +391,33 @@ Safety/constraints:
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Goal
                     </label>
-                    <select value={goal} onChange={(e) => setGoal(e.target.value)} className={selectClass}>
-                      <option>Discount Offer</option>
-                      <option>New Launch</option>
-                      <option>Festive Promotion</option>
-                      <option>Brand Awareness</option>
-                      <option>Bulk Order</option>
-                    </select>
+                    <CustomSelect
+                      aria-label="Campaign goal"
+                      value={goal}
+                      onChange={setGoal}
+                      options={[
+                        "Discount Offer",
+                        "New Launch",
+                        "Festive Promotion",
+                        "Brand Awareness",
+                        "Bulk Order",
+                      ]}
+                      className="w-full"
+                      triggerClassName={selectTriggerClass}
+                    />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Tone
                     </label>
-                    <select value={tone} onChange={(e) => setTone(e.target.value)} className={selectClass}>
-                      <option>Friendly</option>
-                      <option>Premium</option>
-                      <option>Desi & Local</option>
-                      <option>Hype & Energy</option>
-                    </select>
+                    <CustomSelect
+                      aria-label="Campaign tone"
+                      value={tone}
+                      onChange={setTone}
+                      options={["Friendly", "Premium", "Desi & Local", "Hype & Energy"]}
+                      className="w-full"
+                      triggerClassName={selectTriggerClass}
+                    />
                   </div>
                 </div>
 
@@ -412,15 +425,14 @@ Safety/constraints:
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Language
                   </label>
-                  <select
+                  <CustomSelect
+                    aria-label="Campaign language"
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className={selectClass}
-                  >
-                    <option>Hinglish</option>
-                    <option>Hindi</option>
-                    <option>English</option>
-                  </select>
+                    onChange={setLanguage}
+                    options={["Hinglish", "Hindi", "English"]}
+                    className="w-full"
+                    triggerClassName={selectTriggerClass}
+                  />
                 </div>
 
                 <div>

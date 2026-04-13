@@ -1892,6 +1892,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppContext } from '../../context/AppContext'
 import { assets } from '../../assets/assets'
 import toast from 'react-hot-toast'
+import CustomSelect from '../../components/CustomSelect'
+
+const ORDER_STATUS_OPTIONS = [
+  'Order Placed',
+  'Packed',
+  'Out for delivery',
+  'Delivered',
+  'Cancelled',
+]
 
 const Orders = () => {
 
@@ -2386,15 +2395,15 @@ const Orders = () => {
 
         {filteredOrders.map((order) => (
             <div key={order._id}
-              className="flex flex-col md:flex-row gap-5 justify-between p-5 max-w-4xl rounded-md border border-gray-300">
+              className="flex flex-col md:flex-row gap-5 justify-between p-4 sm:p-5 max-w-4xl rounded-md border border-gray-300">
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 min-w-0 w-full md:w-auto">
                 <p className="text-xs text-gray-500 font-medium">
                   Order ID: {order._id.slice(-6)}
                 </p>
 
-                <div className="flex gap-4">
-                  <img className="w-12 h-12" src={assets.box_icon} />
+                <div className="flex gap-3 md:gap-4">
+                  <img className="w-8 h-8 shrink-0 object-contain md:w-12 md:h-12" src={assets.box_icon} alt="" />
 
                   <div>
                     {(order.items || []).map((item, index) => (
@@ -2407,7 +2416,7 @@ const Orders = () => {
                 </div>
               </div>
 
-              <div className="text-sm text-black/70">
+              <div className="text-sm text-black/70 w-full md:w-auto min-w-0">
                 <p className='font-medium'>
                   {order.address?.firstName} {order.address?.lastName}
                 </p>
@@ -2416,7 +2425,7 @@ const Orders = () => {
                 <p>{order.address?.phone}</p>
               </div>
 
-              <div className="text-center">
+              <div className="text-left md:text-center w-full md:w-auto shrink-0">
                 <p className="font-medium text-lg">
                   {currency}{order.amount}
                 </p>
@@ -2431,36 +2440,41 @@ const Orders = () => {
 
                 {/* 👇 print button */}
                 <button
+                  type="button"
                   onClick={() => printInvoice(order)}
-                  className="px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800">
+                  className="mt-2 inline-flex w-[60%] shrink-0 items-center justify-start gap-1 px-3 py-1.5 text-xs bg-black text-white rounded hover:bg-gray-800 md:w-auto">
                   🖨 Print Invoice
                 </button>
 
               </div>
 
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto min-w-0 md:min-w-[15rem]">
 
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
+                <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
                   {order.status}
                 </span>
 
-                <select
+                <CustomSelect
+                  aria-label="Order status"
                   value={order.status}
-                  onChange={(e) => changeStatus(order._id, e.target.value)}
-                  disabled={order.status === "Cancelled" || order.status === "Canceled"}
-                  className={`border px-2 py-1 rounded text-sm 
-                ${(order.status === "Cancelled" || order.status === "Canceled")
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : ""}`}
-                >
-                  <option>Order Placed</option>
-                  <option>Packed</option>
-                  <option>Out for delivery</option>
-                  <option>Delivered</option>
-                  <option>Cancelled</option>
-                </select>
+                  onChange={(v) => changeStatus(order._id, v)}
+                  options={ORDER_STATUS_OPTIONS}
+                  disabled={order.status === 'Cancelled' || order.status === 'Canceled'}
+                  className="w-full max-w-xs md:max-w-none md:w-auto md:min-w-[9.5rem]"
+                  menuMinWidth={240}
+                  menuItemsNoWrap
+                  triggerClassName={[
+                    '!px-2 !py-1 !gap-1 !shadow-none md:!min-h-0',
+                    order.status === 'Cancelled' || order.status === 'Canceled'
+                      ? '!bg-gray-200 !cursor-not-allowed'
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  triggerIconClassName="!h-3.5 !w-3.5"
+                />
 
-                <p className="text-xs text-gray-500">
+                <p className="w-full text-xs text-gray-500 md:max-w-[15rem] md:text-right">
                   {order.paymentType} • {
                     order.paymentType === "COD"
                       ? "Pay on Delivery"
@@ -2470,8 +2484,9 @@ const Orders = () => {
 
                 {order.location?.lat && order.location?.lng && (
                   <button
+                    type="button"
                     onClick={() => openMap(order.location)}
-                    className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">
+                    className="inline-flex w-[60%] shrink-0 items-center justify-start gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 md:w-auto">
                     📍 Track on Map
                   </button>
                 )}

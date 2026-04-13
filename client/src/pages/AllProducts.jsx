@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react'
 import { useAppContext } from '../context/AppContext'
 import { categories } from '../assets/assets'
 import ProductCard from '../components/ProductCard'
+import CustomSelect from '../components/CustomSelect'
 
 const SORT_OPTIONS = [
   { value: 'default', label: 'Default' },
@@ -117,17 +118,14 @@ const AllProducts = () => {
             <span className='text-[11px] text-gray-400 uppercase tracking-wider font-medium whitespace-nowrap'>
               Sort
             </span>
-            <select
+            <CustomSelect
+              aria-label="Sort products"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className='h-8 min-w-[148px] text-sm text-gray-700 border border-gray-200 rounded-md px-2.5 py-0 bg-white outline-none transition hover:border-gray-300 focus:border-gray-300 focus:ring-1 focus:ring-gray-200'
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={setSortBy}
+              options={SORT_OPTIONS}
+              className="min-w-[148px]"
+              triggerClassName="!h-8 !min-h-8 !py-0 !text-sm !text-gray-700 !border-gray-200 !rounded-md !px-2.5 hover:!border-gray-300 focus-visible:!border-gray-300 focus-visible:!ring-1 focus-visible:!ring-gray-200"
+            />
           </label>
         </div>
         )}

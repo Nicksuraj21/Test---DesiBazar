@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
+import CustomSelect from "../components/CustomSelect";
 import { buildProductDetailPath } from "../utils/slugify";
 
 const Cart = () => {
@@ -838,13 +839,17 @@ const Cart = () => {
 
 
                     <p className="text-xs text-gray-400 uppercase mt-5">Payment</p>
-                    <select
-                        onChange={e => setPaymentOption(e.target.value)}
-                        className="w-full border border-gray-200 rounded px-3 py-2 mt-1 text-sm outline-none"
-                    >
-                        <option value="COD">Cash On Delivery</option>
-                        <option value="UPI">UPI - Online</option>
-                    </select>
+                    <CustomSelect
+                        aria-label="Payment method"
+                        value={paymentOption}
+                        onChange={setPaymentOption}
+                        options={[
+                            { value: "COD", label: "Cash On Delivery" },
+                            { value: "UPI", label: "UPI - Online" },
+                        ]}
+                        className="mt-1 w-full"
+                        triggerClassName="!rounded-md !border-gray-200 !px-3 !py-2 !text-sm"
+                    />
 
                     <div className="flex gap-2 mt-4">
                         <input
