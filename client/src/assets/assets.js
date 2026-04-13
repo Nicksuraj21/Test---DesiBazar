@@ -13,6 +13,7 @@ import order_icon from "./order_icon.svg";
 import upload_area from "./upload_area.png";
 import profile_icon from "./profile_icon.png";
 import menu_icon from "./menu_icon.svg";
+import close_icon from "./close_icon.svg";
 import delivery_truck_icon from "./delivery_truck_icon.svg";
 import leaf_icon from "./leaf_icon.svg";
 import coin_icon from "./coin_icon.svg";
@@ -90,6 +91,7 @@ export const assets = {
   upload_area,
   profile_icon,
   menu_icon,
+  close_icon,
   delivery_truck_icon,
   leaf_icon,
   coin_icon,

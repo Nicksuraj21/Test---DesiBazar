@@ -668,6 +668,7 @@ import React from 'react'
 import { useAppContext } from '../../context/AppContext'
 import toast from 'react-hot-toast'
 import { Trash2 } from 'lucide-react'
+import { productImage432Url } from '../../utils/productImage432'
 
 const ProductList = () => {
 
@@ -753,7 +754,7 @@ const ProductList = () => {
                         <tr key={product._id} className="border-b text-center">
 
                             <td className="flex items-center gap-3 p-2">
-                                <img src={product.image[0]} className="w-12"/>
+                                <img src={productImage432Url(product.image[0])} alt="" className="h-12 w-12 object-contain rounded border border-gray-200 bg-slate-50"/>
                                 {product.name}
                             </td>
 

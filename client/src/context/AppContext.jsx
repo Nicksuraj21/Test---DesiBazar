@@ -728,10 +728,21 @@ export const AppContextProvider = ({ children }) => {
 
     }, [setCartItems]);
 
-    const getCartCount = useCallback(
-        () => Object.values(cartItems).reduce((a, b) => a + b, 0),
-        [cartItems]
-    );
+    const getCartCount = useCallback(() => {
+        if (!cartItems || typeof cartItems !== "object" || Array.isArray(cartItems)) return 0;
+        const idSet =
+            Array.isArray(products) && products.length > 0
+                ? new Set(products.map((p) => String(p._id)))
+                : null;
+        let sum = 0;
+        for (const [rawId, rawQty] of Object.entries(cartItems)) {
+            const n = Math.floor(Number(rawQty));
+            if (!Number.isFinite(n) || n <= 0) continue;
+            if (idSet && !idSet.has(String(rawId))) continue;
+            sum += n;
+        }
+        return sum;
+    }, [cartItems, products]);
 
     const getCartAmount = useCallback(() => {
 
@@ -739,7 +750,7 @@ export const AppContextProvider = ({ children }) => {
 
         for (const id in cartItems) {
 
-            const p = products.find(x => x._id === id);
+            const p = products.find((x) => String(x._id) === String(id));
 
             if (p) total += p.offerPrice * cartItems[id];
 
@@ -748,6 +759,24 @@ export const AppContextProvider = ({ children }) => {
         return total;
 
     }, [cartItems, products]);
+
+    // Stale product IDs (deleted / old DB) cart badge ko inflate karte hain — catalog sync par hata do.
+    useEffect(() => {
+        if (!Array.isArray(products) || products.length === 0) return;
+        const idSet = new Set(products.map((p) => String(p._id)));
+        setCartItems((prev) => {
+            if (!prev || typeof prev !== "object" || Array.isArray(prev)) return prev;
+            let changed = false;
+            const next = { ...prev };
+            for (const key of Object.keys(next)) {
+                if (!idSet.has(String(key))) {
+                    delete next[key];
+                    changed = true;
+                }
+            }
+            return changed ? next : prev;
+        });
+    }, [products]);
 
     const value = useMemo(
         () => ({

@@ -678,6 +678,7 @@ import React from "react";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 import { buildProductDetailPath } from "../utils/slugify";
+import { productImage432Url } from "../utils/productImage432";
 
 const ProductCard = ({ product }) => {
   const { currency, addToCart, removeFromCart, cartItems, navigate, products } = useAppContext();
@@ -697,8 +698,8 @@ const ProductCard = ({ product }) => {
       }}
       className="group flex w-full cursor-pointer flex-col justify-between rounded-2xl border border-emerald-100/70 bg-white/90 p-3 shadow-md shadow-emerald-900/[0.04] backdrop-blur-[2px] transition duration-200 hover:border-emerald-200/90 hover:shadow-xl hover:shadow-emerald-900/[0.08]"
     >
-      {/* IMAGE AREA */}
-      <div className="relative flex items-center justify-center h-[110px] mb-2">
+      {/* IMAGE AREA — pehle jaisa: poori card width, centered, max height 90px + contain */}
+      <div className="relative mb-2 flex h-[110px] items-center justify-center">
 
         {/* discount badge */}
         {discount > 0 && (
@@ -710,7 +711,7 @@ const ProductCard = ({ product }) => {
 
         {/* image */}
         <img
-          src={product.image[0]}
+          src={productImage432Url(product.image[0])}
           alt={product.name}
           className={`max-h-[90px] object-contain transition duration-200
           ${product.inStock ? "group-hover:scale-105" : "opacity-40"}`}

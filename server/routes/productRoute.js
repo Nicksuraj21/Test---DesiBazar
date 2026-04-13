@@ -127,6 +127,7 @@ import {
   changeStock,
   productById,
   productList,
+  popularProductIds,
   deleteProduct,
   updatePrice,
   toggleBestSeller
@@ -135,6 +136,7 @@ import {
 const productRouter = express.Router();
 
 productRouter.post('/add', upload.array(["images"]), authSeller, addProduct);
+productRouter.get('/popular', popularProductIds);
 productRouter.get('/list', productList);
 productRouter.post('/id', productById);
 productRouter.post('/stock', authSeller, changeStock);

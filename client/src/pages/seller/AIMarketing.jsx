@@ -11,6 +11,7 @@ import {
   Loader2,
   Check,
 } from "lucide-react";
+import { productImage432Url } from "../../utils/productImage432";
 
 const platformOptions = [
   { id: "instagram", label: "Instagram" },
@@ -336,11 +337,11 @@ Safety/constraints:
             </div>
             {selectedProduct && (
               <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white/80 px-4 py-3 backdrop-blur-sm">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-slate-100">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-100">
                   <img
-                    src={selectedProduct.image?.[0]}
+                    src={productImage432Url(selectedProduct.image?.[0])}
                     alt=""
-                    className="h-full w-full object-cover"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
                 <div className="min-w-0 text-left">

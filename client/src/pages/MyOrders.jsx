@@ -1851,6 +1851,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppContext } from '../context/AppContext'
+import { productImage432Url } from '../utils/productImage432'
 
 const CANCEL_WINDOW = 2 * 60 * 1000 // 2 minutes
 
@@ -1999,19 +2000,19 @@ const MyOrders = () => {
     return (
         <div className='mt-16 pb-16'>
 
-            {loading && (
-                <div className="flex min-h-[45vh] flex-col items-center justify-center gap-3 py-12">
+            {loading ? (
+                <div className="flex min-h-[55vh] flex-col items-center justify-center gap-3 py-16">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-primary" />
                     <p className="text-sm text-gray-500">Loading your orders…</p>
                 </div>
-            )}
-
+            ) : (
+                <>
             <div className='flex flex-col items-end w-max mb-8'>
                 <p className='text-2xl font-medium uppercase'>My orders</p>
                 <div className='w-16 h-0.5 bg-primary rounded-full'></div>
             </div>
 
-            {!loading && myOrders.length === 0 && (
+            {myOrders.length === 0 && (
                 <div className="text-center mt-20 text-gray-500">
                     <p className="text-lg font-medium">No Orders Yet</p>
                     <p className="text-sm mt-1">Your orders will appear here.</p>
@@ -2076,8 +2077,9 @@ const MyOrders = () => {
 
                                         <div className="bg-primary/10 p-2 rounded-lg">
                                             <img
-                                                src={product?.image?.[0] || "/placeholder.png"}
-                                                className="w-12 h-12"
+                                                src={productImage432Url(product?.image?.[0]) || "/placeholder.png"}
+                                                alt=""
+                                                className="h-12 w-12 object-contain bg-slate-50"
                                             />
                                         </div>
 
@@ -2271,6 +2273,8 @@ const MyOrders = () => {
                     </div>
                 )
             })}
+                </>
+            )}
         </div>
     )
 }

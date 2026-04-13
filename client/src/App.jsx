@@ -311,6 +311,7 @@ import RewardPoints from './pages/seller/RewardPoints';
 import Loading from './components/Loading';
 import ScrollToTop from './components/ScrollToTop';
 import MobileBottomNav from "./components/MobileBottomNav"
+import SearchPage from './pages/SearchPage';
 
 const App = () => {
 
@@ -320,6 +321,8 @@ const App = () => {
     location.pathname === "/" || location.pathname === "/cart";
 
   const isSellerPath = location.pathname.includes("seller");
+  const pathNorm = (location.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+  const isSearchPath = pathNorm === "/search";
   const { showUserLogin, isSeller, loading, sellerLoading, locationBlocked } = useAppContext();
 
   if (loading || sellerLoading) {
@@ -339,7 +342,14 @@ const App = () => {
 
       <div className="relative z-[1]">
 
-      {!isSellerPath && <Navbar />}
+      {!isSellerPath &&
+        (isSearchPath ? (
+          <div className="max-md:hidden md:contents">
+            <Navbar />
+          </div>
+        ) : (
+          <Navbar />
+        ))}
 
       {locationBlocked && showLocationBanner && (
         <div className="flex items-center justify-between border-b border-amber-200/60 bg-amber-50 px-3 py-1.5 text-xs">
@@ -380,6 +390,7 @@ const App = () => {
 
         <Routes>
           <Route path='/' element={<Home />} />
+          <Route path='/search' element={<SearchPage />} />
           <Route path='/products' element={<AllProducts />} />
           <Route path='/products/:category' element={<ProductCategory />} />
           <Route path='/products/:category/:slug' element={<ProductDetails />} />

@@ -571,6 +571,13 @@
 
 import { v2 as cloudinary } from "cloudinary"
 import Product from "../models/Product.js"
+import Order from "../models/Order.js"
+import { mapProductImages } from "../utils/productImageUrls.js"
+
+/** Stored as 432×432 pad (no crop). Omit background: "auto" — can break uploads / delivery. */
+const UPLOAD_IMAGE_TRANSFORMATION = [
+  { width: 432, height: 432, crop: "pad", fetch_format: "auto", quality: "auto" },
+]
 
 
 // ADD PRODUCT
@@ -581,7 +588,10 @@ export const addProduct = async (req, res)=>{
 
         let imagesUrl = await Promise.all(
             images.map(async (item)=>{
-                let result = await cloudinary.uploader.upload(item.path, {resource_type: 'image'});
+                let result = await cloudinary.uploader.upload(item.path, {
+                    resource_type: "image",
+                    transformation: UPLOAD_IMAGE_TRANSFORMATION,
+                });
                 return result.secure_url
             })
         )
@@ -599,18 +609,48 @@ export const addProduct = async (req, res)=>{
 export const productList = async (req, res)=>{
     try {
         const products = await Product.find({})
-        res.json({success: true, products})
+        const productsOut = products.map((p) => mapProductImages(p))
+        res.json({success: true, products: productsOut})
     } catch (error) {
         res.json({ success: false, message: error.message })
     }
 }
+
+/** Product IDs ranked by total units ordered (non-cancelled orders). Public for search / marketing. */
+export const popularProductIds = async (req, res) => {
+    try {
+        const rows = await Order.aggregate([
+            {
+                $match: {
+                    status: { $nin: ["Cancelled", "Canceled"] },
+                    items: { $exists: true, $ne: [] },
+                },
+            },
+            { $unwind: "$items" },
+            {
+                $group: {
+                    _id: "$items.product",
+                    units: { $sum: { $ifNull: ["$items.quantity", 0] } },
+                },
+            },
+            { $match: { _id: { $ne: null }, units: { $gt: 0 } } },
+            { $sort: { units: -1 } },
+            { $limit: 40 },
+        ]);
+        const ids = rows.map((r) => String(r._id));
+        res.json({ success: true, ids });
+    } catch (error) {
+        res.json({ success: false, message: error.message, ids: [] });
+    }
+};
 
 
 // SINGLE
 export const productById = async (req, res)=>{
     try {
         const { id } = req.body
-        const product = await Product.findById(id)
+        let product = await Product.findById(id)
+        if (product) product = mapProductImages(product)
 
         res.json({ success: true, product })
     } catch (error) {

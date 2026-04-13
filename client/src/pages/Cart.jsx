@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
 import CustomSelect from "../components/CustomSelect";
 import { buildProductDetailPath } from "../utils/slugify";
+import { productImage432Url } from "../utils/productImage432";
 
 const Cart = () => {
     const {
@@ -633,9 +634,9 @@ const Cart = () => {
                                         navigate(buildProductDetailPath(product.category, product.name, product._id, products));
                                         scrollTo(0, 0);
                                     }}
-                                    className="cursor-pointer w-24 h-24 border border-gray-200 rounded-lg bg-white flex items-center justify-center"
+                                    className="cursor-pointer flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-slate-50"
                                 >
-                                    <img src={product.image[0]} className="h-full object-cover" />
+                                    <img src={productImage432Url(product.image[0])} alt="" className="max-h-full max-w-full object-contain" />
                                 </div>
 
                                 <div>

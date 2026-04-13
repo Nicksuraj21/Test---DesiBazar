@@ -971,10 +971,9 @@ import toast from "react-hot-toast";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const location = useLocation();
-  const searchRef = useRef();
   const menuRef = useRef();
+  const menuButtonRef = useRef(null);
 
   const {
     user,
@@ -982,7 +981,6 @@ const Navbar = () => {
     setShowUserLogin,
     navigate,
     setSearchQuery,
-    searchQuery,
     getCartCount,
     axios,
   } = useAppContext();
@@ -995,29 +993,19 @@ const Navbar = () => {
   useEffect(() => setOpen(false), [location.pathname]);
 
   useEffect(() => {
-    setSearchQuery("");
-    setShowSearch(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (searchQuery.length > 0) navigate("/products");
-  }, [searchQuery]);
+    if (location.pathname !== "/products") {
+      setSearchQuery("");
+    }
+  }, [location.pathname, setSearchQuery]);
 
   useEffect(() => {
     const handler = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSearch(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (!menuRef.current) return;
+      const t = e.target;
+      if (menuRef.current.contains(t)) return;
+      // Toggle button is outside the dropdown DOM; ignore those so close icon + toggle work.
+      if (menuButtonRef.current?.contains(t)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -1038,16 +1026,16 @@ const Navbar = () => {
 
   return (
     <>
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-emerald-200/40 bg-white/90 px-6 pb-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top,0px)))] shadow-sm shadow-emerald-900/5 backdrop-blur-none md:bg-white/75 md:backdrop-blur-xl md:px-16 lg:px-24 xl:px-32">
-
+      {/* Fixed header: avoids sticky breaking inside nested layouts / WebView scroll */}
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-emerald-200/40 bg-white/95 pt-[env(safe-area-inset-top,0px)] shadow-sm shadow-emerald-900/5 backdrop-blur-md supports-[backdrop-filter]:bg-white/90 md:bg-white/90">
+        <nav className="mx-auto flex w-full min-w-0 max-w-[100vw] items-center justify-between px-6 py-3.5 md:px-16 md:py-4 lg:px-24 xl:px-32">
         {/* LOGO */}
-        <NavLink to="/" onClick={() => setOpen(false)}>
+        <NavLink to="/" onClick={() => setOpen(false)} className="shrink-0">
           <img className="h-9" src={assets.logo} alt="logo" />
         </NavLink>
 
         {/* DESKTOP MENU */}
-        <div className="hidden sm:flex items-center gap-8">
+        <div className="hidden min-w-0 sm:flex sm:items-center sm:gap-8">
           <NavLink to="/" onClick={() => setOpen(false)}>Home</NavLink>
 
           <NavLink to="/products" onClick={() => setOpen(false)}>
@@ -1062,15 +1050,14 @@ const Navbar = () => {
             Contact
           </a>
 
-          <div className="hidden lg:flex items-center gap-2 rounded-full border border-emerald-200/60 bg-white/50 px-3 text-sm backdrop-blur-sm">
-            <input
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="py-1.5 w-full bg-transparent outline-none"
-              type="text"
-              placeholder="Search products"
-            />
-            <img src={assets.search_icon} className="w-4 h-4" />
-          </div>
+          <NavLink
+            to="/search"
+            onClick={() => setOpen(false)}
+            className="hidden min-w-[12rem] max-w-[14rem] items-center gap-2 rounded-full border border-emerald-200/60 bg-white/50 px-3 py-1.5 text-sm text-slate-400 backdrop-blur-sm transition hover:border-emerald-300/80 hover:bg-white/80 lg:flex"
+          >
+            <span className="min-w-0 flex-1 truncate py-0.5">Search products…</span>
+            <img src={assets.search_icon} className="h-4 w-4 shrink-0 opacity-70" alt="" />
+          </NavLink>
 
           <div
             onClick={() => {
@@ -1113,41 +1100,33 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* MOBILE ICONS */}
-        <div className="flex items-center gap-6 sm:hidden">
+        {/* MOBILE ICONS (no top cart — cart is on bottom nav) */}
+        <div className="flex shrink-0 items-center gap-4 sm:hidden sm:gap-6">
 
-          <img
-            src={assets.search_icon}
-            className="w-5 cursor-pointer"
-            onClick={() => setShowSearch(!showSearch)}
-          />
-
-          <div
-            onClick={() => {
-              setOpen(false);
-              navigate("/cart");
-            }}
-            className="relative cursor-pointer"
+          <NavLink
+            to="/search"
+            onClick={() => setOpen(false)}
+            className="flex shrink-0 items-center"
+            aria-label="Search"
           >
-            <img src={assets.nav_cart_icon} className="w-6 opacity-80" />
-            <span className="absolute -top-2 -right-3 text-xs text-white bg-primary w-[18px] h-[18px] rounded-full flex items-center justify-center">
-              {getCartCount()}
-            </span>
-          </div>
+            <img src={assets.search_icon} alt="" className="h-5 w-5" />
+          </NavLink>
 
-          <button onClick={() => {
-            setOpen(!open);
-            setShowSearch(false);
-          }}>
-            <img src={assets.menu_icon} />
+          <button
+            ref={menuButtonRef}
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <img src={open ? assets.close_icon : assets.menu_icon} alt="" className="pointer-events-none h-6 w-6" />
           </button>
         </div>
+        </nav>
 
-        {/* MOBILE MENU */}
+        {/* MOBILE MENU: absolute top-full = nav ke neeche chipke, fixed+rem calc gap nahi banega */}
         {open && (
           <div
             ref={menuRef}
-            className="fixed left-0 top-[calc(5rem+env(safe-area-inset-top,0px))] z-50 flex w-full flex-col gap-3 border-b border-emerald-100/50 bg-white/95 py-4 text-sm shadow-lg shadow-emerald-900/5 backdrop-blur-xl sm:hidden px-6"
+            className="absolute inset-x-0 top-full z-50 flex max-h-[min(72vh,calc(100dvh-env(safe-area-inset-top,0px)-5rem))] w-full flex-col gap-3 overflow-y-auto overflow-x-hidden border-b border-emerald-200/40 bg-white/95 px-6 pb-4 pt-0 text-sm shadow-lg shadow-emerald-900/10 backdrop-blur-xl sm:hidden"
           >
             <NavLink to="/" onClick={() => setOpen(false)}>Home</NavLink>
 
@@ -1198,31 +1177,14 @@ const Navbar = () => {
             )}
           </div>
         )}
-      </nav>
+      </header>
 
-      {/* SMALL SEARCH POPUP */}
-      {showSearch && (
-        <div className="absolute left-0 top-[calc(5.25rem+env(safe-area-inset-top,0px))] z-50 flex w-full justify-center sm:hidden">
-          <div
-            ref={searchRef}
-            className="flex w-[92%] items-center gap-2 rounded-full border border-emerald-100/70 bg-white/90 px-4 py-3 shadow-lg shadow-emerald-900/10 backdrop-blur-md"
-          >
-            <input
-              autoFocus
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="flex-1 outline-none text-sm"
-            />
+      {/* Space for fixed header (safe area + bar height) */}
+      <div
+        className="w-full shrink-0 [height:calc(env(safe-area-inset-top,0px)+4.40rem)] md:[height:calc(env(safe-area-inset-top,0px)+4.6rem)]"
+        aria-hidden="true"
+      />
 
-            <img
-              src={assets.close_icon}
-              className="w-4 cursor-pointer opacity-60"
-              onClick={() => setShowSearch(false)}
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 };

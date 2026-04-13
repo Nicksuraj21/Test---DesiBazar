@@ -445,6 +445,7 @@ import { Link, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import { resolveProductFromRoute, slugify } from "../utils/slugify";
+import { productImage432Url } from "../utils/productImage432";
 
 const ProductDetails = () => {
 
@@ -455,7 +456,6 @@ const ProductDetails = () => {
     const [recommendedProducts, setRecommendedProducts] = useState([]);
     const [trendingProducts, setTrendingProducts] = useState([]);
     const [recentProducts, setRecentProducts] = useState([]);   // NEW
-    const [thumbnail, setThumbnail] = useState(null);
 
     const product = resolveProductFromRoute(category, slug, products);
 
@@ -527,14 +527,6 @@ const ProductDetails = () => {
 
 
 
-    // PRODUCT IMAGE
-    useEffect(() => {
-        setThumbnail(product?.image[0] ? product.image[0] : null)
-    }, [product])
-
-
-
-
     // SAVE RECENTLY VIEWED (OPTIMIZED)
     useEffect(() => {
 
@@ -584,20 +576,14 @@ const ProductDetails = () => {
 
             <div className="flex flex-col md:flex-row gap-16 mt-4">
 
-                <div className="flex gap-3">
-
-                    <div className="flex flex-col gap-3">
-                        {product.image.map((image, index) => (
-                            <div key={index} onClick={() => setThumbnail(image)} className="border max-w-24 border-gray-500/30 rounded overflow-hidden cursor-pointer" >
-                                <img src={image} alt="" />
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="border border-gray-500/30 max-w-100 rounded overflow-hidden">
-                        <img src={thumbnail} alt="" />
-                    </div>
-
+                <div className="flex aspect-square max-h-[432px] w-full max-w-[432px] items-center justify-center overflow-hidden rounded border border-gray-500/30 bg-slate-50">
+                    {product.image?.[0] ? (
+                        <img
+                            src={productImage432Url(product.image[0])}
+                            alt={product.name}
+                            className="max-h-full max-w-full object-contain"
+                        />
+                    ) : null}
                 </div>
 
 
