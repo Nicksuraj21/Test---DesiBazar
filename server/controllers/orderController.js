@@ -2596,6 +2596,147 @@ export const getAllOrders = async (req, res) => {
     }
 };
 
+// ==============================
+// Leaderboard: one pipeline for seller + public (same month, same rules; only limit differs)
+// ==============================
+const parseCalendarYearMonthFromQuery = (req) => {
+    const now = new Date();
+    let y = Number(req?.query?.year);
+    let m = Number(req?.query?.month);
+    if (!Number.isFinite(y) || y < 2000 || y > 2100) {
+        y = now.getFullYear();
+    }
+    if (!Number.isFinite(m) || m < 1 || m > 12) {
+        m = now.getMonth() + 1;
+    }
+    return { y, m };
+};
+
+const aggregateTopCustomersLeaderboardForMonth = async (y, m, limit) => {
+    const monthStart = new Date(y, m - 1, 1, 0, 0, 0, 0);
+    const monthEnd = new Date(y, m, 0, 23, 59, 59, 999);
+    const monthLabel = monthStart.toLocaleString("en-IN", { month: "long", year: "numeric" });
+
+    const rows = await Order.aggregate([
+        {
+            $match: {
+                createdAt: { $gte: monthStart, $lte: monthEnd },
+                $or: [{ paymentType: "COD" }, { isPaid: true }],
+                status: { $nin: ["Cancelled", "Canceled"] }
+            }
+        },
+        {
+            $group: {
+                _id: "$userId",
+                orderCount: { $sum: 1 },
+                totalSpent: { $sum: "$amount" }
+            }
+        },
+        { $sort: { totalSpent: -1, orderCount: -1 } },
+        { $limit: limit },
+        {
+            $lookup: {
+                from: User.collection.name,
+                localField: "_id",
+                foreignField: "_id",
+                as: "user"
+            }
+        },
+        { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+        {
+            $project: {
+                _id: 0,
+                userId: "$_id",
+                orderCount: 1,
+                totalSpent: 1,
+                name: { $ifNull: ["$user.name", "Customer"] },
+                phone: "$user.phone",
+                email: "$user.email",
+                profileImage: { $ifNull: ["$user.profileImage", ""] }
+            }
+        }
+    ]);
+
+    return { rows, monthLabel, y, m };
+};
+
+// ==============================
+// SELLER: top customers by spend in a calendar month (server local TZ)
+// GET /api/order/seller/top-customers-month?year=2026&month=4  (month 1–12, optional)
+// ==============================
+export const getTopLoyalCustomersMonth = async (req, res) => {
+    try {
+        const { y, m } = parseCalendarYearMonthFromQuery(req);
+        const { rows, monthLabel, y: yy, m: mm } = await aggregateTopCustomersLeaderboardForMonth(y, m, 5);
+
+        return res.json({
+            success: true,
+            monthLabel,
+            year: yy,
+            month: mm,
+            customers: rows
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
+// ==============================
+// PUBLIC: top 3 buyers this calendar month (same rules as seller top-customers-month; masked email)
+// GET /api/order/public/top-buyers?year=&month=  (optional; default current month, server local TZ)
+// ==============================
+const maskEmailForPublic = (email) => {
+    if (!email || typeof email !== "string") {
+        return "me***@shopper";
+    }
+    const trimmed = email.trim();
+    const at = trimmed.indexOf("@");
+    if (at <= 0) {
+        return "me***@shopper";
+    }
+    const local = trimmed.slice(0, at);
+    const domain = trimmed.slice(at + 1).trim();
+    if (!domain) {
+        return "me***@shopper";
+    }
+    let maskedLocal;
+    if (local.length <= 1) {
+        maskedLocal = `${local || "x"}***`;
+    } else if (local.length === 2) {
+        maskedLocal = `${local[0]}***`;
+    } else {
+        maskedLocal = `${local[0]}***${local[local.length - 1]}`;
+    }
+    return `${maskedLocal}@${domain}`;
+};
+
+export const getPublicTopBuyers = async (req, res) => {
+    try {
+        const { y, m } = parseCalendarYearMonthFromQuery(req);
+        const { rows, monthLabel, y: yy, m: mm } = await aggregateTopCustomersLeaderboardForMonth(y, m, 3);
+
+        const buyers = rows.map((r) => ({
+            orderCount: r.orderCount,
+            totalSpent: r.totalSpent,
+            name: String(r.name || "").trim() || "Customer",
+            maskedEmail: maskEmailForPublic(r.email),
+            profileImage: String(r.profileImage || "").trim() || ""
+        }));
+
+        return res.json({
+            success: true,
+            buyers,
+            monthLabel,
+            year: yy,
+            month: mm
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
 
 // ==============================
 // ADMIN STATUS UPDATE

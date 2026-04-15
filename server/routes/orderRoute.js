@@ -180,6 +180,8 @@ import authSeller from '../middlewares/authSeller.js';
 
 import {
   getAllOrders,
+  getPublicTopBuyers,
+  getTopLoyalCustomersMonth,
   getUserOrders,
   placeOrderCOD,
   cancelOrder,
@@ -188,6 +190,8 @@ import {
 
 const orderRouter = express.Router();
 
+// PUBLIC (no auth)
+orderRouter.get('/public/top-buyers', getPublicTopBuyers)
 
 // USER ROUTES
 orderRouter.post('/cod', authUser, placeOrderCOD)
@@ -198,6 +202,7 @@ orderRouter.post('/cancel', authUser, cancelOrder)
 
 // ADMIN ROUTES
 orderRouter.get('/seller', authSeller, getAllOrders)
+orderRouter.get('/seller/top-customers-month', authSeller, getTopLoyalCustomersMonth)
 orderRouter.post('/status', authSeller, updateOrderStatus)
 
 export default orderRouter;

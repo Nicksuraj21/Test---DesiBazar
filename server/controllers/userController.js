@@ -864,6 +864,8 @@
 
 
 
+import fs from "fs/promises";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Order from "../models/Order.js";
 import { pruneAndPersistUserRewards } from "../utils/rewardGrants.js";
@@ -872,6 +874,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
+import { v2 as cloudinary } from "cloudinary";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -1154,6 +1157,136 @@ export const updateProfile = async (req, res) => {
   } catch (error) {
     return res.json({ success: false, message: "Update failed" });
   }
+};
+
+const PROFILE_PHOTO_TRANSFORMATION = [
+    { width: 320, height: 320, crop: "fill", gravity: "auto", fetch_format: "auto", quality: "auto" }
+];
+
+/** Extract Cloudinary public_id from a stored secure_url (our uploads only). */
+const cloudinaryPublicIdFromUrl = (url) => {
+    if (!url || typeof url !== "string") return null;
+    const trimmed = url.trim();
+    if (!trimmed.includes("res.cloudinary.com")) return null;
+    const noQuery = trimmed.split("?")[0];
+    const marker = "/upload/";
+    const idx = noQuery.indexOf(marker);
+    if (idx === -1) return null;
+    const tail = noQuery.slice(idx + marker.length);
+    const segments = tail.split("/").filter(Boolean);
+    if (segments.length === 0) return null;
+    let start = 0;
+    if (/^v\d+$/i.test(segments[0])) {
+        start = 1;
+    }
+    const pathWithExt = segments.slice(start).join("/");
+    if (!pathWithExt) return null;
+    return pathWithExt.replace(/\.[a-z0-9]+$/i, "") || null;
+};
+
+// ==============================
+// UPDATE PROFILE PHOTO (Cloudinary)
+// POST /api/user/profile-image  (multipart field name: image)
+// ==============================
+export const updateProfileImage = async (req, res) => {
+    const localPath = req.file?.path;
+
+    try {
+        if (!localPath) {
+            return res.json({ success: false, message: "Image file required" });
+        }
+
+        await pruneAndPersistUserRewards(User, req.userId);
+
+        const existing = await User.findById(req.userId).select("profileImage");
+        const oldUrl = existing?.profileImage;
+        const oldPublicId = cloudinaryPublicIdFromUrl(oldUrl);
+
+        const result = await cloudinary.uploader.upload(localPath, {
+            resource_type: "image",
+            folder: "desibazar/profiles",
+            transformation: PROFILE_PHOTO_TRANSFORMATION
+        });
+
+        const newPublicId = result.public_id;
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { profileImage: result.secure_url },
+            { new: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+
+        if (oldPublicId && oldPublicId !== newPublicId) {
+            try {
+                await cloudinary.uploader.destroy(oldPublicId, { resource_type: "image" });
+            } catch (delErr) {
+                console.log("Cloudinary delete old profile image:", delErr.message);
+            }
+        }
+
+        return res.json({ success: true, user });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message || "Upload failed" });
+    } finally {
+        if (localPath) {
+            try {
+                await fs.unlink(localPath);
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+};
+
+// ==============================
+// THIS MONTH SPEND (same rules as Star shoppers / seller leaderboard)
+// GET /api/user/spend-this-month
+// ==============================
+export const getUserSpendThisMonth = async (req, res) => {
+    try {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth() + 1;
+        const monthStart = new Date(y, m - 1, 1, 0, 0, 0, 0);
+        const monthEnd = new Date(y, m, 0, 23, 59, 59, 999);
+        const monthLabel = monthStart.toLocaleString("en-IN", { month: "long", year: "numeric" });
+
+        const agg = await Order.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(String(req.userId)),
+                    createdAt: { $gte: monthStart, $lte: monthEnd },
+                    $or: [{ paymentType: "COD" }, { isPaid: true }],
+                    status: { $nin: ["Cancelled", "Canceled"] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalSpent: { $sum: "$amount" },
+                    orderCount: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const totalSpent = agg[0]?.totalSpent ?? 0;
+        const orderCount = agg[0]?.orderCount ?? 0;
+
+        return res.json({
+            success: true,
+            totalSpent,
+            orderCount,
+            monthLabel
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.json({ success: false, message: error.message });
+    }
 };
 
 // ==============================

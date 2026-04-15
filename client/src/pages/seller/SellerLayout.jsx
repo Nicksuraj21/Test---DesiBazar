@@ -12,6 +12,7 @@ const SellerLayout = () => {
         { name: "Add Product", path: "/seller", icon: assets.add_icon },
         { name: "Product List", path: "/seller/product-list", icon: assets.product_list_icon },
         { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
+        { name: "Top customers", path: "/seller/top-customers", icon: assets.star_icon },
         { name: "Reward points", path: "/seller/reward-points", icon: assets.coin_icon },
         { name: "AI Marketing", path: "/seller/ai-marketing", icon: assets.refresh_icon },
     ];

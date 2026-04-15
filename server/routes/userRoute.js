@@ -60,9 +60,12 @@ import {
   registerUser,
   loginUser,
   updateProfile,
+  updateProfileImage,
+  getUserSpendThisMonth,
   getRewardTransactions,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
+import { upload } from "../configs/multer.js";
 
 const userRouter = express.Router();
 
@@ -72,6 +75,8 @@ userRouter.post("/verify-otp", verifyOtp);
 
 userRouter.get("/is-auth", authUser, isAuth);
 userRouter.patch("/profile", authUser, updateProfile);
+userRouter.post("/profile-image", authUser, upload.single("image"), updateProfileImage);
+userRouter.get("/spend-this-month", authUser, getUserSpendThisMonth);
 userRouter.get("/reward-transactions", authUser, getRewardTransactions);
 userRouter.get("/logout", authUser, logout);
 

@@ -55,19 +55,7 @@ body {
   color: #0f172a;
 }
 
-
-
-
-* {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-input, textarea {
-  -webkit-user-select: text;
-  user-select: text;
-}
-
+/* Allow normal text selection / copy site-wide (avoid global user-select: none on *) */
 
 /* ========================= */
 /* FORCE LIGHT MODE LOCK */

@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema(
             sparse: true,
         },
 
+        /** Public HTTPS URL (e.g. Cloudinary) — optional profile photo */
+        profileImage: {
+            type: String,
+            default: "",
+        },
+
         cartItems: {
             type: Object,
             default: {},

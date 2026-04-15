@@ -306,6 +306,7 @@ import SellerLayout from './pages/seller/SellerLayout';
 import AddProduct from './pages/seller/AddProduct';
 import ProductList from './pages/seller/ProductList';
 import Orders from './pages/seller/Orders';
+import TopCustomers from './pages/seller/TopCustomers';
 import AIMarketing from './pages/seller/AIMarketing';
 import RewardPoints from './pages/seller/RewardPoints';
 import Loading from './components/Loading';
@@ -406,6 +407,7 @@ const App = () => {
             <Route index element={isSeller ? <AddProduct /> : null} />
             <Route path='product-list' element={<ProductList />} />
             <Route path='orders' element={<Orders />} />
+            <Route path='top-customers' element={<TopCustomers />} />
             <Route path='ai-marketing' element={<AIMarketing />} />
             <Route path='reward-points' element={<RewardPoints />} />
           </Route>
