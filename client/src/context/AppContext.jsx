@@ -842,6 +842,7 @@ export const AppContextProvider = ({ children }) => {
             locationBlocked,
             requestLocation,
             storeAcceptingOrders,
+            setStoreAcceptingOrders,
             refreshStoreAcceptingOrders
         }),
         [
@@ -868,6 +869,7 @@ export const AppContextProvider = ({ children }) => {
             locationBlocked,
             requestLocation,
             storeAcceptingOrders,
+            setStoreAcceptingOrders,
             refreshStoreAcceptingOrders
         ]
     );

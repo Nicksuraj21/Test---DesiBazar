@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const StoreSettings = () => {
-  const { axios, refreshStoreAcceptingOrders } = useAppContext();
+  const { axios, setStoreAcceptingOrders } = useAppContext();
   const [acceptingOrders, setAcceptingOrders] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const toggleInFlightRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -13,7 +13,9 @@ const StoreSettings = () => {
       try {
         const { data } = await axios.get("/api/seller/store-settings");
         if (!cancelled && data.success) {
-          setAcceptingOrders(!!data.acceptingOrders);
+          const v = !!data.acceptingOrders;
+          setAcceptingOrders(v);
+          setStoreAcceptingOrders(v);
         }
       } catch {
         if (!cancelled) toast.error("Could not load store settings");
@@ -22,30 +24,34 @@ const StoreSettings = () => {
     return () => {
       cancelled = true;
     };
-  }, [axios]);
+  }, [axios, setStoreAcceptingOrders]);
 
   const toggleAcceptingOrders = async () => {
-    if (saving) return;
+    if (toggleInFlightRef.current) return;
     const next = !acceptingOrders;
-    setSaving(true);
+    toggleInFlightRef.current = true;
     setAcceptingOrders(next);
+    setStoreAcceptingOrders(next);
     try {
       const { data } = await axios.put("/api/seller/store-settings", {
         acceptingOrders: next,
       });
       if (data.success) {
-        setAcceptingOrders(!!data.acceptingOrders);
-        void refreshStoreAcceptingOrders();
+        const v = !!data.acceptingOrders;
+        setAcceptingOrders(v);
+        setStoreAcceptingOrders(v);
         toast.success(next ? "Accepting orders" : "Not accepting orders");
       } else {
         setAcceptingOrders(!next);
+        setStoreAcceptingOrders(!next);
         toast.error(data.message || "Could not update");
       }
     } catch (e) {
       setAcceptingOrders(!next);
+      setStoreAcceptingOrders(!next);
       toast.error(e.message || "Could not update");
     } finally {
-      setSaving(false);
+      toggleInFlightRef.current = false;
     }
   };
 
@@ -78,13 +84,12 @@ const StoreSettings = () => {
                     ? "Store is accepting new customer orders"
                     : "Store is not accepting new customer orders"
                 }
-                disabled={saving}
                 onClick={() => void toggleAcceptingOrders()}
-                className={`relative h-9 w-[3.25rem] shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                className={`relative h-9 w-[3.25rem] shrink-0 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   acceptingOrders
                     ? "bg-emerald-600 shadow-inner shadow-emerald-900/20"
                     : "bg-slate-300"
-                } ${saving ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+                }`}
               >
                 <span
                   className={`pointer-events-none absolute top-1 left-1 h-7 w-7 rounded-full bg-white shadow-md ${
