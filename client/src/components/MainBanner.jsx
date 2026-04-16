@@ -315,7 +315,8 @@ const OUT_OF_SERVICE_BANNER = "/outofservice.png"
 const MainBanner = () => {
 
   const { axios } = useAppContext()
-  const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(true)
+  /** null = unknown until first fetch (avoids slider flash when store is closed). */
+  const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(null)
 
   useEffect(() => {
     const load = () => {
@@ -323,8 +324,11 @@ const MainBanner = () => {
         .get("/api/store/accepting-orders")
         .then(({ data }) => {
           if (data?.success) setStoreAcceptingOrders(!!data.acceptingOrders)
+          else setStoreAcceptingOrders(true)
         })
-        .catch(() => {})
+        .catch(() => {
+          setStoreAcceptingOrders(true)
+        })
     }
     load()
     const interval = setInterval(load, 40000)
@@ -358,7 +362,7 @@ const MainBanner = () => {
   const sliderRef = useRef(null)
 
   useEffect(() => {
-    if (!storeAcceptingOrders) return
+    if (storeAcceptingOrders !== true) return
     const interval = setInterval(() => {
       setCurrent((prev) => prev + 1)
     }, 3000)
@@ -367,7 +371,7 @@ const MainBanner = () => {
   }, [storeAcceptingOrders])
 
   useEffect(() => {
-    if (!storeAcceptingOrders) return
+    if (storeAcceptingOrders !== true) return
 
     if (current === banners.length - 1) {
       setTimeout(() => {
@@ -411,7 +415,15 @@ const MainBanner = () => {
         className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl md:rounded-[1.75rem] shadow-[0_12px_40px_-12px_rgba(5,150,105,0.25),0_4px_24px_-8px_rgba(15,23,42,0.12)] ring-1 ring-white/50"
       >
 
-        {storeAcceptingOrders ? (
+        {storeAcceptingOrders === null ? (
+          <div
+            className="relative flex w-full aspect-[9/4] items-center justify-center bg-gray-100"
+            aria-busy="true"
+            aria-label="Loading banner"
+          >
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-black" />
+          </div>
+        ) : storeAcceptingOrders ? (
           <div
             ref={sliderRef}
             className="flex"
@@ -457,7 +469,7 @@ const MainBanner = () => {
 
       </div>
 
-      {storeAcceptingOrders && (
+      {storeAcceptingOrders === true && (
         <div className="mt-3 flex justify-center" role="tablist" aria-label="Banner slides">
           <div className="flex items-center gap-2.5 rounded-full bg-white/55 px-2.5 py-1.5 shadow-sm shadow-emerald-900/5 backdrop-blur-sm">
             {originalBanners.map((_, index) => {
