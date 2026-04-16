@@ -26,7 +26,8 @@ const Cart = () => {
         user,
         setUser,
         setCartItems,
-        setShowUserLogin   // 👈 ADD THIS
+        setShowUserLogin, // 👈 ADD THIS
+        storeAcceptingOrders,
     } = useAppContext();
 
     const [cartArray, setCartArray] = useState([]);
@@ -63,9 +64,6 @@ const Cart = () => {
     /** After successful order: show points popup (COD + UPI) */
     const [orderSuccessModal, setOrderSuccessModal] = useState(null);
 
-    /** When false, seller paused checkout (mirrors /api/store/accepting-orders). */
-    const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(true);
-
     const openOrderPlacedModal = (payload) => {
         const pe = typeof payload?.pointsEarned === "number" ? payload.pointsEarned : 0;
         const rp = typeof payload?.rewardPoints === "number" ? payload.rewardPoints : 0;
@@ -76,27 +74,6 @@ const Cart = () => {
         setOrderSuccessModal(null);
         navigate("/my-orders");
     };
-
-    useEffect(() => {
-        const load = () => {
-            axios
-                .get("/api/store/accepting-orders")
-                .then(({ data }) => {
-                    if (data?.success) setStoreAcceptingOrders(!!data.acceptingOrders);
-                })
-                .catch(() => {});
-        };
-        load();
-        const interval = setInterval(load, 40000);
-        const onVis = () => {
-            if (document.visibilityState === "visible") load();
-        };
-        document.addEventListener("visibilitychange", onVis);
-        return () => {
-            clearInterval(interval);
-            document.removeEventListener("visibilitychange", onVis);
-        };
-    }, [axios]);
 
     /* ================= COUPON ================= */
     useEffect(() => {
@@ -138,7 +115,7 @@ const Cart = () => {
     const freeDeliveryTarget = 100;
     const remainingForFreeDelivery = freeDeliveryTarget - cartAmount;
 
-    const ordersPaused = !storeAcceptingOrders && cartArray.length > 0;
+    const ordersPaused = storeAcceptingOrders === false && cartArray.length > 0;
 
     useEffect(() => {
         setRedeemPointsInput((prev) => Math.min(Math.max(0, prev), maxRedeem));
@@ -380,7 +357,7 @@ const Cart = () => {
             return;
         }
 
-        if (!storeAcceptingOrders) {
+        if (storeAcceptingOrders === false) {
             toast.error(
                 "We're not taking new orders right now. Please try again a little later — we'll be back soon."
             );
@@ -514,7 +491,7 @@ const Cart = () => {
             return;
         }
 
-        if (!storeAcceptingOrders) {
+        if (storeAcceptingOrders === false) {
             toast.error(
                 "We're not taking new orders right now. Please try again a little later — we'll be back soon."
             );

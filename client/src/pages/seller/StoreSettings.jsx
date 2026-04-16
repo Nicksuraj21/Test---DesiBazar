@@ -3,7 +3,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const StoreSettings = () => {
-  const { axios } = useAppContext();
+  const { axios, refreshStoreAcceptingOrders } = useAppContext();
   const [acceptingOrders, setAcceptingOrders] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -35,6 +35,7 @@ const StoreSettings = () => {
       });
       if (data.success) {
         setAcceptingOrders(!!data.acceptingOrders);
+        void refreshStoreAcceptingOrders();
         toast.success(next ? "Accepting orders" : "Not accepting orders");
       } else {
         setAcceptingOrders(!next);

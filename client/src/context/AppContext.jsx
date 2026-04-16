@@ -331,6 +331,18 @@ export const AppContextProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [cartReady, setCartReady] = useState(false);
 
+    /** null until first fetch; stays in context so Home banner does not reset on every navigation. */
+    const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(null);
+
+    const refreshStoreAcceptingOrders = useCallback(async () => {
+        try {
+            const { data } = await axios.get("/api/store/accepting-orders");
+            if (data?.success) setStoreAcceptingOrders(!!data.acceptingOrders);
+        } catch {
+            /* leave previous value */
+        }
+    }, [axios]);
+
     // ==============================
     // Fetch Seller
     // ==============================
@@ -556,6 +568,25 @@ export const AppContextProvider = ({ children }) => {
     useEffect(() => {
         fetchProducts();
     }, [fetchProducts]);
+
+    useEffect(() => {
+        refreshStoreAcceptingOrders();
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                refreshStoreAcceptingOrders();
+            }
+        }, 40000);
+        const onVis = () => {
+            if (document.visibilityState === "visible") {
+                refreshStoreAcceptingOrders();
+            }
+        };
+        document.addEventListener("visibilitychange", onVis);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", onVis);
+        };
+    }, [refreshStoreAcceptingOrders]);
 
     useEffect(() => {
 
@@ -809,7 +840,9 @@ export const AppContextProvider = ({ children }) => {
             setUserLocation,
             getUserLocation,
             locationBlocked,
-            requestLocation
+            requestLocation,
+            storeAcceptingOrders,
+            refreshStoreAcceptingOrders
         }),
         [
             navigate,
@@ -833,7 +866,9 @@ export const AppContextProvider = ({ children }) => {
             loading,
             userLocation,
             locationBlocked,
-            requestLocation
+            requestLocation,
+            storeAcceptingOrders,
+            refreshStoreAcceptingOrders
         ]
     );
 

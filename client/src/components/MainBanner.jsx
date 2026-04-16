@@ -314,33 +314,7 @@ const OUT_OF_SERVICE_BANNER = "/outofservice.png"
 
 const MainBanner = () => {
 
-  const { axios } = useAppContext()
-  /** null = unknown until first fetch (avoids slider flash when store is closed). */
-  const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(null)
-
-  useEffect(() => {
-    const load = () => {
-      axios
-        .get("/api/store/accepting-orders")
-        .then(({ data }) => {
-          if (data?.success) setStoreAcceptingOrders(!!data.acceptingOrders)
-          else setStoreAcceptingOrders(true)
-        })
-        .catch(() => {
-          setStoreAcceptingOrders(true)
-        })
-    }
-    load()
-    const interval = setInterval(load, 40000)
-    const onVis = () => {
-      if (document.visibilityState === "visible") load()
-    }
-    document.addEventListener("visibilitychange", onVis)
-    return () => {
-      clearInterval(interval)
-      document.removeEventListener("visibilitychange", onVis)
-    }
-  }, [axios])
+  const { storeAcceptingOrders } = useAppContext()
 
   const originalBanners = [
     assets.baner1,
