@@ -2110,6 +2110,10 @@ const Orders = () => {
 
   const audioRef = useRef(null)
   const lastCountRef = useRef(0)
+  /** Cancels in-flight GET /api/order/seller so polling cannot overwrite a status change mid-flight */
+  const sellerOrdersFetchAbortRef = useRef(null)
+  /** While true, silent interval fetches are skipped; explicit sync uses `syncAfterMutation` */
+  const statusMutationInFlightRef = useRef(false)
 
   useEffect(() => {
     const unlockAudio = () => {
@@ -2192,10 +2196,21 @@ const Orders = () => {
   // FETCH ORDERS
   // =========================
   const fetchOrders = useCallback(async (options = {}) => {
-    const { silent = false } = options
+    const { silent = false, syncAfterMutation = false } = options
+
+    if (silent && statusMutationInFlightRef.current && !syncAfterMutation) {
+      return
+    }
+
+    sellerOrdersFetchAbortRef.current?.abort()
+    const ctrl = new AbortController()
+    sellerOrdersFetchAbortRef.current = ctrl
+
     try {
       if (!silent) setOrdersBooting(true)
-      const { data } = await axios.get('/api/order/seller')
+      const { data } = await axios.get('/api/order/seller', {
+        signal: ctrl.signal,
+      })
 
       if (data.success) {
         const allOrders = data.orders
@@ -2221,6 +2236,11 @@ const Orders = () => {
       }
 
     } catch (error) {
+      const aborted =
+        ctrl.signal.aborted ||
+        error?.code === 'ERR_CANCELED' ||
+        error?.name === 'CanceledError'
+      if (aborted) return
       if (!silent) toast.error(error.message)
     } finally {
       if (!silent) setOrdersBooting(false)
@@ -2277,38 +2297,45 @@ const Orders = () => {
     const normalizedStatus =
       status === 'Canceled' || status === 'Cancelled' ? 'Cancelled' : status
 
-    setOrders((prev) =>
-      prev.map((o) =>
-        o._id === orderId ? { ...o, status: normalizedStatus } : o
-      )
-    )
-
+    statusMutationInFlightRef.current = true
     try {
-      const { data } = await axios.post('/api/order/status', {
-        orderId,
-        status
-      })
+      sellerOrdersFetchAbortRef.current?.abort()
 
-      if (data.success) {
-        toast.success(data.message || 'Status updated')
-      } else {
-        toast.error(data.message || 'Could not update status')
-      }
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId ? { ...o, status: normalizedStatus } : o
+        )
+      )
 
       try {
-        sessionStorage.removeItem(SELLER_ORDERS_CACHE_KEY)
-      } catch {
-        /* ignore */
+        const { data } = await axios.post('/api/order/status', {
+          orderId,
+          status
+        })
+
+        if (data.success) {
+          toast.success(data.message || 'Status updated')
+        } else {
+          toast.error(data.message || 'Could not update status')
+        }
+
+        try {
+          sessionStorage.removeItem(SELLER_ORDERS_CACHE_KEY)
+        } catch {
+          /* ignore */
+        }
+        await fetchOrders({ silent: true, syncAfterMutation: true })
+      } catch (error) {
+        toast.error(error.message)
+        try {
+          sessionStorage.removeItem(SELLER_ORDERS_CACHE_KEY)
+        } catch {
+          /* ignore */
+        }
+        await fetchOrders({ silent: true, syncAfterMutation: true })
       }
-      await fetchOrders({ silent: true })
-    } catch (error) {
-      toast.error(error.message)
-      try {
-        sessionStorage.removeItem(SELLER_ORDERS_CACHE_KEY)
-      } catch {
-        /* ignore */
-      }
-      await fetchOrders({ silent: true })
+    } finally {
+      statusMutationInFlightRef.current = false
     }
   }
 
