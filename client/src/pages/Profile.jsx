@@ -1,7 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppContext } from "../context/AppContext";
+import {
+  readSpendThisMonthCache,
+  writeSpendThisMonthCache,
+  SPEND_CACHE_UPDATED_EVENT,
+} from "../utils/spendThisMonthCache";
 
 const isOtpPlaceholderEmail = (email) =>
   typeof email === "string" && email.endsWith("@otp.com");
@@ -38,19 +43,58 @@ const Profile = () => {
     setPhotoBroken(false);
   }, [user?.profileImage]);
 
+  // Hydrate from sessionStorage before paint — avoids spend loader flash when cache exists.
+  useLayoutEffect(() => {
+    if (!user) {
+      setMonthSpend(null);
+      setMonthSpendLoading(false);
+      return;
+    }
+    const uid = user._id;
+    const cached = readSpendThisMonthCache(uid);
+    if (cached) {
+      setMonthSpend(cached);
+      setMonthSpendLoading(false);
+    } else {
+      setMonthSpend(null);
+      setMonthSpendLoading(true);
+    }
+  }, [user?._id]);
+
+  // Fetch only when there is no valid cache (first visit, new month, or warm failed).
   useEffect(() => {
     if (!user) return;
+    const uid = user._id;
     let cancelled = false;
+
     const load = async () => {
+      let hit = readSpendThisMonthCache(uid);
+      if (hit) {
+        if (!cancelled) {
+          setMonthSpend(hit);
+          setMonthSpendLoading(false);
+        }
+        return;
+      }
       try {
         setMonthSpendLoading(true);
+        hit = readSpendThisMonthCache(uid);
+        if (hit) {
+          if (!cancelled) {
+            setMonthSpend(hit);
+            setMonthSpendLoading(false);
+          }
+          return;
+        }
         const { data } = await axios.get("/api/user/spend-this-month");
         if (!cancelled && data.success) {
-          setMonthSpend({
+          const next = {
             totalSpent: Number(data.totalSpent) || 0,
             orderCount: Number(data.orderCount) || 0,
             monthLabel: data.monthLabel || "",
-          });
+          };
+          setMonthSpend(next);
+          writeSpendThisMonthCache(uid, next);
         }
       } catch {
         if (!cancelled) {
@@ -60,11 +104,26 @@ const Profile = () => {
         if (!cancelled) setMonthSpendLoading(false);
       }
     };
+
     load();
     return () => {
       cancelled = true;
     };
-  }, [user, axios]);
+  }, [user?._id, axios]);
+
+  // Cart/MyOrders warm wrote cache, or another tab updated — sync UI without refetch/loader.
+  useEffect(() => {
+    const onSpendCacheUpdated = (e) => {
+      if (!user?._id || String(e.detail?.userId) !== String(user._id)) return;
+      const c = readSpendThisMonthCache(user._id);
+      if (c) {
+        setMonthSpend(c);
+        setMonthSpendLoading(false);
+      }
+    };
+    window.addEventListener(SPEND_CACHE_UPDATED_EVENT, onSpendCacheUpdated);
+    return () => window.removeEventListener(SPEND_CACHE_UPDATED_EVENT, onSpendCacheUpdated);
+  }, [user?._id]);
 
   const loadAddresses = async () => {
     setAddrLoading(true);

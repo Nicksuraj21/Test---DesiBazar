@@ -1852,6 +1852,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAppContext } from '../context/AppContext'
 import { productImage432Url } from '../utils/productImage432'
+import { warmSpendThisMonthCache } from '../utils/spendThisMonthCache'
 
 const CANCEL_WINDOW = 2 * 60 * 1000 // 2 minutes
 
@@ -1889,19 +1890,17 @@ const MyOrders = () => {
         }
     }
 
+    // Depend on user id only — reward/cart sync replaces `user` with a new object often; re-running
+    // this effect was re-showing the full-page loader while you stayed on My Orders.
+    // Fetch on mount / when login identity changes; navigating away and back remounts and loads again.
     useEffect(() => {
         if (!user) {
             setMyOrders([])
             setLoading(false)
             return;
         }
-        // first time loader
         fetchMyOrders()
-        const interval = setInterval(() => {
-            fetchMyOrders(false) // no loader
-        }, 5000)
-        return () => clearInterval(interval)
-    }, [user])
+    }, [user?._id])
 
     // ⏱️ 1 sec tick for instant UI update
     useEffect(() => {
@@ -1929,10 +1928,11 @@ const MyOrders = () => {
         try {
             const { data } = await axios.post('/api/order/cancel', { orderId })
             if (data.success) {
+                void warmSpendThisMonthCache(axios, user._id)
                 if (typeof data.rewardPoints === "number" && user) {
                     setUser({ ...user, rewardPoints: data.rewardPoints })
                 }
-                fetchMyOrders()
+                fetchMyOrders(false)
             } else {
                 alert(data.message)
             }

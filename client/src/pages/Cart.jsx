@@ -7,6 +7,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import CustomSelect from "../components/CustomSelect";
 import { buildProductDetailPath } from "../utils/slugify";
 import { productImage432Url } from "../utils/productImage432";
+import { warmSpendThisMonthCache } from "../utils/spendThisMonthCache";
 
 const Cart = () => {
     const {
@@ -419,6 +420,7 @@ const Cart = () => {
                         );
 
                         if (verify.data.success) {
+                            void warmSpendThisMonthCache(axios, user._id);
                             setCartItems({});
                             if (typeof verify.data.rewardPoints === "number" && user) {
                                 setUser({ ...user, rewardPoints: verify.data.rewardPoints });
@@ -538,6 +540,7 @@ const Cart = () => {
 
                 if (data.success) {
 
+                    void warmSpendThisMonthCache(axios, user._id);
                     setCartItems({});
                     if (typeof data.rewardPoints === "number" && user) {
                         setUser({ ...user, rewardPoints: data.rewardPoints });
