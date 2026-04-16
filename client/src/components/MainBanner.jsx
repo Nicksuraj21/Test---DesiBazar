@@ -308,8 +308,35 @@
 import React, { useEffect, useRef, useState } from "react"
 import { assets } from "../assets/assets"
 import { Link } from "react-router-dom"
+import { useAppContext } from "../context/AppContext"
+
+const OUT_OF_SERVICE_BANNER = "/outofservice.png"
 
 const MainBanner = () => {
+
+  const { axios } = useAppContext()
+  const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(true)
+
+  useEffect(() => {
+    const load = () => {
+      axios
+        .get("/api/store/accepting-orders")
+        .then(({ data }) => {
+          if (data?.success) setStoreAcceptingOrders(!!data.acceptingOrders)
+        })
+        .catch(() => {})
+    }
+    load()
+    const interval = setInterval(load, 40000)
+    const onVis = () => {
+      if (document.visibilityState === "visible") load()
+    }
+    document.addEventListener("visibilitychange", onVis)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVis)
+    }
+  }, [axios])
 
   const originalBanners = [
     assets.baner1,
@@ -331,14 +358,16 @@ const MainBanner = () => {
   const sliderRef = useRef(null)
 
   useEffect(() => {
+    if (!storeAcceptingOrders) return
     const interval = setInterval(() => {
       setCurrent((prev) => prev + 1)
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [storeAcceptingOrders])
 
   useEffect(() => {
+    if (!storeAcceptingOrders) return
 
     if (current === banners.length - 1) {
       setTimeout(() => {
@@ -358,7 +387,7 @@ const MainBanner = () => {
       setTransition(true)
     }, 50)
 
-  }, [current, banners.length])
+  }, [current, banners.length, storeAcceptingOrders])
 
   const handleImageLoad = (index) => {
     setLoadedImages(prev => ({
@@ -382,64 +411,76 @@ const MainBanner = () => {
         className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl md:rounded-[1.75rem] shadow-[0_12px_40px_-12px_rgba(5,150,105,0.25),0_4px_24px_-8px_rgba(15,23,42,0.12)] ring-1 ring-white/50"
       >
 
-        <div
-          ref={sliderRef}
-          className="flex"
-          style={{
-            transform: `translateX(-${current * 100}%)`,
-            transition: transition ? "transform 0.7s ease-in-out" : "none"
-          }}
-        >
-          {banners.map((banner, index) => (
-            <div
-              key={index}
-              className="relative w-full flex-shrink-0 aspect-[9/4]"
-            >
-
-              {!loadedImages[index] && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                  <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-                </div>
-              )}
-
-              <img
-                src={banner}
-                alt="banner"
-                loading="eager"
-                onLoad={() => handleImageLoad(index)}
-                className={`h-full w-full object-cover transition-opacity duration-500 ${
-                  loadedImages[index] ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            </div>
-          ))}
-        </div>
-
-      </div>
-
-      {/* Pagination — subtle dots (not button-y) */}
-      <div className="mt-3 flex justify-center" role="tablist" aria-label="Banner slides">
-        <div className="flex items-center gap-2.5 rounded-full bg-white/55 px-2.5 py-1.5 shadow-sm shadow-emerald-900/5 backdrop-blur-sm">
-          {originalBanners.map((_, index) => {
-            const isActive = activeDotIndex === index
-            return (
-              <button
+        {storeAcceptingOrders ? (
+          <div
+            ref={sliderRef}
+            className="flex"
+            style={{
+              transform: `translateX(-${current * 100}%)`,
+              transition: transition ? "transform 0.7s ease-in-out" : "none"
+            }}
+          >
+            {banners.map((banner, index) => (
+              <div
                 key={index}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={`Slide ${index + 1}`}
-                onClick={() => setCurrent(index + 1)}
-                className={`rounded-full transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                  isActive
-                    ? "h-1.5 w-4 bg-primary/90 shadow-[0_0_0_3px_rgba(5,150,105,0.12)]"
-                    : "h-1.5 w-1.5 bg-slate-300/90 hover:bg-slate-400"
-                }`}
-              />
-            )
-          })}
-        </div>
+                className="relative w-full flex-shrink-0 aspect-[9/4]"
+              >
+
+                {!loadedImages[index] && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                  </div>
+                )}
+
+                <img
+                  src={banner}
+                  alt="banner"
+                  loading="eager"
+                  onLoad={() => handleImageLoad(index)}
+                  className={`h-full w-full object-cover transition-opacity duration-500 ${
+                    loadedImages[index] ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="relative w-full aspect-[9/4] bg-slate-100">
+            <img
+              src={OUT_OF_SERVICE_BANNER}
+              alt="DesiBazar is temporarily not accepting new orders online"
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
+          </div>
+        )}
+
       </div>
+
+      {storeAcceptingOrders && (
+        <div className="mt-3 flex justify-center" role="tablist" aria-label="Banner slides">
+          <div className="flex items-center gap-2.5 rounded-full bg-white/55 px-2.5 py-1.5 shadow-sm shadow-emerald-900/5 backdrop-blur-sm">
+            {originalBanners.map((_, index) => {
+              const isActive = activeDotIndex === index
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={`Slide ${index + 1}`}
+                  onClick={() => setCurrent(index + 1)}
+                  className={`rounded-full transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    isActive
+                      ? "h-1.5 w-4 bg-primary/90 shadow-[0_0_0_3px_rgba(5,150,105,0.12)]"
+                      : "h-1.5 w-1.5 bg-slate-300/90 hover:bg-slate-400"
+                  }`}
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Hero Text Section */}
       <div className="flex flex-col items-center text-center mt-8 px-4">

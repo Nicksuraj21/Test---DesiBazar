@@ -9,6 +9,9 @@ import { buildProductDetailPath } from "../utils/slugify";
 import { productImage432Url } from "../utils/productImage432";
 import { warmSpendThisMonthCache } from "../utils/spendThisMonthCache";
 
+/** Short label on the main CTA when the store has paused new orders */
+const ORDERS_PAUSED_BUTTON = "Place Order - We Back Soon";
+
 const Cart = () => {
     const {
         products,
@@ -60,6 +63,9 @@ const Cart = () => {
     /** After successful order: show points popup (COD + UPI) */
     const [orderSuccessModal, setOrderSuccessModal] = useState(null);
 
+    /** When false, seller paused checkout (mirrors /api/store/accepting-orders). */
+    const [storeAcceptingOrders, setStoreAcceptingOrders] = useState(true);
+
     const openOrderPlacedModal = (payload) => {
         const pe = typeof payload?.pointsEarned === "number" ? payload.pointsEarned : 0;
         const rp = typeof payload?.rewardPoints === "number" ? payload.rewardPoints : 0;
@@ -70,6 +76,27 @@ const Cart = () => {
         setOrderSuccessModal(null);
         navigate("/my-orders");
     };
+
+    useEffect(() => {
+        const load = () => {
+            axios
+                .get("/api/store/accepting-orders")
+                .then(({ data }) => {
+                    if (data?.success) setStoreAcceptingOrders(!!data.acceptingOrders);
+                })
+                .catch(() => {});
+        };
+        load();
+        const interval = setInterval(load, 40000);
+        const onVis = () => {
+            if (document.visibilityState === "visible") load();
+        };
+        document.addEventListener("visibilitychange", onVis);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", onVis);
+        };
+    }, [axios]);
 
     /* ================= COUPON ================= */
     useEffect(() => {
@@ -110,6 +137,8 @@ const Cart = () => {
 
     const freeDeliveryTarget = 100;
     const remainingForFreeDelivery = freeDeliveryTarget - cartAmount;
+
+    const ordersPaused = !storeAcceptingOrders && cartArray.length > 0;
 
     useEffect(() => {
         setRedeemPointsInput((prev) => Math.min(Math.max(0, prev), maxRedeem));
@@ -351,6 +380,13 @@ const Cart = () => {
             return;
         }
 
+        if (!storeAcceptingOrders) {
+            toast.error(
+                "We're not taking new orders right now. Please try again a little later — we'll be back soon."
+            );
+            return;
+        }
+
         try {
 
             // const location = await requestLocationBeforeOrder();
@@ -475,6 +511,13 @@ const Cart = () => {
         // ✅ CART EMPTY CHECK
         if (cartArray.length === 0) {
             toast.error("Your cart is empty");
+            return;
+        }
+
+        if (!storeAcceptingOrders) {
+            toast.error(
+                "We're not taking new orders right now. Please try again a little later — we'll be back soon."
+            );
             return;
         }
 
@@ -960,18 +1003,30 @@ const Cart = () => {
                         disabled={
                             isPlacingOrder ||
                             cartArray.length === 0 ||
+                            ordersPaused ||
                             (paymentOption === "UPI" && finalTotal < 1)
                         }
-                        className="w-full py-3 mt-6 bg-primary text-white rounded-lg font-medium hover:bg-primary-dull transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        className={`w-full py-3 mt-6 rounded-lg font-medium transition disabled:cursor-not-allowed ${
+                            ordersPaused
+                                ? "bg-emerald-50/90 text-slate-700 ring-1 ring-emerald-200/70 shadow-sm disabled:opacity-90 text-sm leading-snug px-3 py-3.5"
+                                : "bg-primary text-white hover:bg-primary-dull disabled:opacity-60"
+                        }`}
                     >
                         {cartArray.length === 0
                             ? "Cart is Empty"
-                            : isPlacingOrder
-                                ? "Placing Order..."
-                                : paymentOption === "COD"
-                                    ? "Place Order"
-                                    : "Proceed to Pay"}
+                            : ordersPaused
+                                ? ORDERS_PAUSED_BUTTON
+                                : isPlacingOrder
+                                    ? "Placing Order..."
+                                    : paymentOption === "COD"
+                                        ? "Place Order"
+                                        : "Proceed to Pay"}
                     </button>
+                    {ordersPaused && (
+                        <p className="mt-2.5 text-center text-xs leading-relaxed text-slate-600 px-1">
+                            We&apos;re not accepting new orders at the moment.
+                        </p>
+                    )}
                 </div>
 
             </div>

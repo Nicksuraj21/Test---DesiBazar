@@ -556,6 +556,7 @@ import {
   pruneExpiredGrants,
   sumGrants
 } from "../utils/rewardGrants.js";
+import { areStoreOrdersAccepted } from "../utils/storeOrdersGate.js";
 
 // ==========================================
 // CREATE UPI ORDER
@@ -571,6 +572,13 @@ export const createUpiOrder = async (req, res) => {
       return res.json({
         success: false,
         message: "User not logged in"
+      });
+    }
+
+    if (!(await areStoreOrdersAccepted())) {
+      return res.json({
+        success: false,
+        message: "We're not taking new orders right now. Please check back soon."
       });
     }
 

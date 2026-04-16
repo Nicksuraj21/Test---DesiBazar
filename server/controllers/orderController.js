@@ -2191,6 +2191,7 @@ import {
     pruneExpiredGrants,
     sumGrants
 } from "../utils/rewardGrants.js";
+import { areStoreOrdersAccepted } from "../utils/storeOrdersGate.js";
 
 /**
  * COD: points applied at order creation. UPI: only after payment (isPaid).
@@ -2305,6 +2306,13 @@ export const placeOrderCOD = async (req, res) => {
             return res.json({
                 success: false,
                 message: "User not authorized"
+            });
+        }
+
+        if (!(await areStoreOrdersAccepted())) {
+            return res.json({
+                success: false,
+                message: "We're not taking new orders right now. Please check back soon."
             });
         }
 
