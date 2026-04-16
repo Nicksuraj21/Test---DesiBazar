@@ -2188,23 +2188,6 @@ const Orders = () => {
     })
   }
 
-  const hydrateOrdersCache = useCallback(() => {
-    try {
-      const raw = sessionStorage.getItem(SELLER_ORDERS_CACHE_KEY)
-      if (!raw) return false
-      const parsed = JSON.parse(raw)
-      if (!Array.isArray(parsed?.orders)) return false
-      if (Date.now() - (parsed?.time || 0) > 60000) return false
-
-      setOrders(parsed.orders)
-      lastCountRef.current = parsed.orders.length
-      calculateStats(parsed.orders, filter)
-      return true
-    } catch {
-      return false
-    }
-  }, [filter])
-
   // =========================
   // FETCH ORDERS
   // =========================
@@ -2235,8 +2218,6 @@ const Orders = () => {
           SELLER_ORDERS_CACHE_KEY,
           JSON.stringify({ orders: allOrders, time: Date.now() })
         )
-
-        calculateStats(allOrders, filter)
       }
 
     } catch (error) {
@@ -2244,14 +2225,37 @@ const Orders = () => {
     } finally {
       if (!silent) setOrdersBooting(false)
     }
-  }, [axios, filter])
+  }, [axios])
+
+  const fetchOrdersRef = useRef(fetchOrders)
+  fetchOrdersRef.current = fetchOrders
 
   useEffect(() => {
-    const hasCache = hydrateOrdersCache()
-    fetchOrders({ silent: hasCache })
-    const interval = setInterval(() => fetchOrders({ silent: true }), 4000)
+    let hasCache = false
+    try {
+      const raw = sessionStorage.getItem(SELLER_ORDERS_CACHE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (
+          Array.isArray(parsed?.orders) &&
+          Date.now() - (parsed?.time || 0) <= 60000
+        ) {
+          setOrders(parsed.orders)
+          lastCountRef.current = parsed.orders.length
+          hasCache = true
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    fetchOrdersRef.current({ silent: hasCache })
+    const interval = setInterval(
+      () => fetchOrdersRef.current({ silent: true }),
+      4000
+    )
     return () => clearInterval(interval)
-  }, [fetchOrders, hydrateOrdersCache])
+  }, [])
 
   useEffect(() => {
     calculateStats(orders, filter)
@@ -2270,6 +2274,15 @@ const Orders = () => {
   // STATUS CHANGE
   // =========================
   const changeStatus = async (orderId, status) => {
+    const normalizedStatus =
+      status === 'Canceled' || status === 'Cancelled' ? 'Cancelled' : status
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === orderId ? { ...o, status: normalizedStatus } : o
+      )
+    )
+
     try {
       const { data } = await axios.post('/api/order/status', {
         orderId,
@@ -2277,11 +2290,25 @@ const Orders = () => {
       })
 
       if (data.success) {
-        toast.success("Status updated")
-        fetchOrders()
+        toast.success(data.message || 'Status updated')
+      } else {
+        toast.error(data.message || 'Could not update status')
       }
+
+      try {
+        sessionStorage.removeItem(SELLER_ORDERS_CACHE_KEY)
+      } catch {
+        /* ignore */
+      }
+      await fetchOrders({ silent: true })
     } catch (error) {
       toast.error(error.message)
+      try {
+        sessionStorage.removeItem(SELLER_ORDERS_CACHE_KEY)
+      } catch {
+        /* ignore */
+      }
+      await fetchOrders({ silent: true })
     }
   }
 

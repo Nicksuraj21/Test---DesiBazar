@@ -1244,7 +1244,7 @@ export const updateProfileImage = async (req, res) => {
 };
 
 // ==============================
-// THIS MONTH SPEND (same rules as Star shoppers / seller leaderboard)
+// THIS MONTH SPEND (same rules as Star shoppers: delivered orders only)
 // GET /api/user/spend-this-month
 // ==============================
 export const getUserSpendThisMonth = async (req, res) => {
@@ -1262,7 +1262,7 @@ export const getUserSpendThisMonth = async (req, res) => {
                     userId: new mongoose.Types.ObjectId(String(req.userId)),
                     createdAt: { $gte: monthStart, $lte: monthEnd },
                     $or: [{ paymentType: "COD" }, { isPaid: true }],
-                    status: { $nin: ["Cancelled", "Canceled"] }
+                    status: "Delivered"
                 }
             },
             {

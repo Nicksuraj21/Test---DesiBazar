@@ -2630,7 +2630,8 @@ const aggregateTopCustomersLeaderboardForMonth = async (y, m, limit) => {
             $match: {
                 createdAt: { $gte: monthStart, $lte: monthEnd },
                 $or: [{ paymentType: "COD" }, { isPaid: true }],
-                status: { $nin: ["Cancelled", "Canceled"] }
+                // Star shoppers: only delivered orders count (not Packed / Out for delivery)
+                status: "Delivered"
             }
         },
         {

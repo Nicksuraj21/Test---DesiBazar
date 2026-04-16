@@ -166,7 +166,7 @@ const Categories = () => {
           </span>
         </h2>
         <p className="mt-1 text-xs text-slate-600 md:text-sm">
-          Top 3 by spend this month
+          Top 3 by delivered spend this month
           {topBuyersMonthLabel ? (
             <span className="text-slate-500"> — {topBuyersMonthLabel}</span>
           ) : null}
@@ -191,7 +191,7 @@ const Categories = () => {
             ))}
           </div>
         ) : topBuyers.length === 0 ? (
-          <p className="mt-5 text-sm text-slate-500">No orders this month yet.</p>
+          <p className="mt-5 text-sm text-slate-500">No delivered orders this month yet.</p>
         ) : (
           <ul className="mt-5 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-3 md:gap-4">
             {topBuyers.map((buyer, idx) => (

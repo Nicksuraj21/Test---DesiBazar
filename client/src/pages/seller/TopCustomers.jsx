@@ -41,7 +41,7 @@ const TopCustomers = () => {
               {monthLabel ? <span className="text-gray-500"> — {monthLabel}</span> : null}
             </p>
             <p className="mt-1 max-w-2xl text-xs text-gray-500">
-              Non-cancelled orders only; same payment rules as the main orders list (COD or paid online).
+              Delivered orders only (COD or paid online). Packed / in-transit orders do not count until delivered.
             </p>
           </div>
           <button
