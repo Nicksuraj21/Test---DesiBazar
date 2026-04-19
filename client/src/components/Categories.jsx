@@ -166,10 +166,14 @@ const Categories = () => {
           </span>
         </h2>
         <p className="mt-1 text-xs text-slate-600 md:text-sm">
-          Top 3 by delivered spend this month
+          Top 3 Customers by Spend 
           {topBuyersMonthLabel ? (
             <span className="text-slate-500"> — {topBuyersMonthLabel}</span>
           ) : null}
+        </p>
+
+        <p className="mt-1 text-xs text-slate-600 md:text-sm">
+          Top 1 - Spender wins 50 free points at month-end.
         </p>
 
         {topBuyersLoading ? (
