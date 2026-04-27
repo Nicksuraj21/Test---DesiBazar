@@ -60,10 +60,10 @@ const StoreSettings = () => {
       <div className="mx-auto max-w-3xl space-y-8 p-5 md:p-10">
         <div className="border-b border-slate-200/80 pb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Store</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+          {/* <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
             Control whether customers can place new orders from the site. When turned off, checkout
             is paused: the cart shows a clear message and new orders are blocked on the server as well.
-          </p>
+          </p> */}
         </div>
 
         <div className="max-w-lg rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 ring-1 ring-slate-900/[0.03]">
