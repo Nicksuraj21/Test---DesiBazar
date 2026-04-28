@@ -2571,7 +2571,8 @@ export const cancelOrder = async (req, res) => {
         );
 
         order.status = "Cancelled";
-        order.paymentStatus = "Refund Initiated";
+        // If gateway already processed synchronously, mark final state immediately.
+        order.paymentStatus = refund?.status === "processed" ? "Refunded" : "Refund Initiated";
         order.refundId = refund.id;
 
         await order.save();
@@ -2816,7 +2817,8 @@ export const updateOrderStatus = async (req, res) => {
                 );
 
                 order.status = "Cancelled";
-                order.paymentStatus = "Refund Initiated";
+                // If gateway already processed synchronously, mark final state immediately.
+                order.paymentStatus = refund?.status === "processed" ? "Refunded" : "Refund Initiated";
                 order.refundId = refund.id;
 
                 await order.save();

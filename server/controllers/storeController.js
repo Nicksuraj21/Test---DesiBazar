@@ -42,6 +42,9 @@ export const getSellerStoreSettings = async (req, res) => {
         $match: {
           paymentType: "UPI",
           isPaid: true,
+          // Do not count cancelled/refunding/refunded orders in today's seller total
+          status: { $nin: ["Cancelled", "Canceled"] },
+          paymentStatus: { $nin: ["Refund Initiated", "Refunded"] },
           createdAt: { $gte: dayStart, $lte: now },
         },
       },

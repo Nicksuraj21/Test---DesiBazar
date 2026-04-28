@@ -545,6 +545,7 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 import crypto from "crypto";
+import axios from "axios";
 import Address from "../models/Address.js";
 import {
   computeAuthorizedRedeem,
@@ -557,6 +558,55 @@ import {
   sumGrants
 } from "../utils/rewardGrants.js";
 import { areStoreOrdersAccepted } from "../utils/storeOrdersGate.js";
+
+const sendTelegramMessage = async (order) => {
+  try {
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+    if (!BOT_TOKEN || !CHAT_ID) return;
+
+    const itemsList = (order.items || [])
+      .map((i) => `• ${i.quantity} x ${i.product?.name || "Product"}`)
+      .join("\n");
+
+    const address = order.address
+      ? `${order.address.firstName || ""} ${order.address.lastName || ""}
+${order.address.street || ""}
+${order.address.city || ""}, ${order.address.state || ""}
+Phone: ${order.address.phone || ""}`
+      : "Address not available";
+
+    let mapLink = "https://maps.google.com";
+    if (order.location?.lat && order.location?.lng) {
+      mapLink = `https://www.google.com/maps?q=${order.location.lat},${order.location.lng}`;
+    }
+
+    const message = `
+🛒 New Order Received!
+
+Order ID : ${order._id.toString().slice(-6)}
+Order Amount : ₹${order.amount}
+Payment : UPI (Paid)
+--------------------------------------
+Order Items :
+${itemsList}
+
+--------------------------------------
+Delivery Address :
+${address}
+
+📍Customer Location
+${mapLink}
+`;
+
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      chat_id: CHAT_ID,
+      text: message,
+    });
+  } catch (error) {
+    console.log("Telegram error:", error.response?.data || error.message);
+  }
+};
 
 // ==========================================
 // CREATE UPI ORDER
@@ -779,6 +829,15 @@ export const verifyUpiPayment = async (req, res) => {
       paymentStatus: "Paid",
       razorpayPaymentId: razorpay_payment_id
     });
+
+    const fullOrder = await Order.findById(orderId)
+      .populate("items.product")
+      .populate("userId")
+      .lean();
+    if (fullOrder) {
+      // Keep checkout fast even if Telegram is slow/failing.
+      void sendTelegramMessage(fullOrder);
+    }
 
     return res.json({
       success: true,
