@@ -310,7 +310,8 @@ import { assets } from "../assets/assets"
 import { Link } from "react-router-dom"
 import { useAppContext } from "../context/AppContext"
 
-const OUT_OF_SERVICE_BANNER = "/outofservice.png"
+// Cache-buster so updated public image shows immediately
+const OUT_OF_SERVICE_BANNER = "/outofservice.png?v=20260428"
 
 const MainBanner = () => {
 

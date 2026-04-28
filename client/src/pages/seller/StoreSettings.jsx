@@ -3,9 +3,12 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const StoreSettings = () => {
-  const { axios, setStoreAcceptingOrders } = useAppContext();
+  const { axios, setStoreAcceptingOrders, setStoreCodEnabled } = useAppContext();
   const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [codEnabled, setCodEnabled] = useState(true);
+  const [currentMonthUpi, setCurrentMonthUpi] = useState({ amount: 0, orders: 0 });
   const toggleInFlightRef = useRef(false);
+  const codToggleInFlightRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,6 +19,13 @@ const StoreSettings = () => {
           const v = !!data.acceptingOrders;
           setAcceptingOrders(v);
           setStoreAcceptingOrders(v);
+          const c = data.codEnabled === false ? false : true;
+          setCodEnabled(c);
+          setStoreCodEnabled(c);
+          setCurrentMonthUpi({
+            amount: Math.round(Number(data.currentMonthUpiPaidAmount) || 0),
+            orders: Math.max(0, Math.floor(Number(data.currentMonthUpiPaidOrders) || 0)),
+          });
         }
       } catch {
         if (!cancelled) toast.error("Could not load store settings");
@@ -24,7 +34,7 @@ const StoreSettings = () => {
     return () => {
       cancelled = true;
     };
-  }, [axios, setStoreAcceptingOrders]);
+  }, [axios, setStoreAcceptingOrders, setStoreCodEnabled]);
 
   const toggleAcceptingOrders = async () => {
     if (toggleInFlightRef.current) return;
@@ -55,6 +65,35 @@ const StoreSettings = () => {
     }
   };
 
+  const toggleCodEnabled = async () => {
+    if (codToggleInFlightRef.current) return;
+    const next = !codEnabled;
+    codToggleInFlightRef.current = true;
+    setCodEnabled(next);
+    setStoreCodEnabled(next);
+    try {
+      const { data } = await axios.put("/api/seller/store-settings", {
+        codEnabled: next,
+      });
+      if (data.success) {
+        const c = data.codEnabled === false ? false : true;
+        setCodEnabled(c);
+        setStoreCodEnabled(c);
+        toast.success(next ? "COD shown at checkout" : "COD hidden — UPI only");
+      } else {
+        setCodEnabled(!next);
+        setStoreCodEnabled(!next);
+        toast.error(data.message || "Could not update");
+      }
+    } catch (e) {
+      setCodEnabled(!next);
+      setStoreCodEnabled(!next);
+      toast.error(e.message || "Could not update");
+    } finally {
+      codToggleInFlightRef.current = false;
+    }
+  };
+
   return (
     <div className="no-scrollbar h-[95vh] flex-1 overflow-y-scroll">
       <div className="mx-auto max-w-3xl space-y-8 p-5 md:p-10">
@@ -66,14 +105,27 @@ const StoreSettings = () => {
           </p> */}
         </div>
 
+        <div className="max-w-lg rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-6 shadow-md shadow-emerald-900/5 ring-1 ring-emerald-900/[0.03]">
+          <p className="text-sm font-semibold text-emerald-900">UPI (Paid only)</p>
+          <p className="mt-1 text-xs leading-relaxed text-emerald-800/80">
+            Total paid UPI amount.
+          </p>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-emerald-900 tabular-nums">
+            ₹{currentMonthUpi.amount.toLocaleString("en-IN")}
+          </p>
+          <p className="mt-1 text-xs text-emerald-800/80 tabular-nums">
+            {currentMonthUpi.orders} paid UPI order(s)
+          </p>
+        </div>
+
         <div className="max-w-lg rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 ring-1 ring-slate-900/[0.03]">
           <div className="flex flex-col gap-2">
             <p className="text-sm font-semibold text-slate-900">Accept new orders</p>
-            <p className="text-xs leading-relaxed text-slate-500">
+            {/* <p className="text-xs leading-relaxed text-slate-500">
               {acceptingOrders
                 ? "Customers can use Place order / Pay on the cart."
                 : "Checkout is disabled for customers until you turn this on."}
-            </p>
+            </p> */}
             <div className="flex w-fit items-center gap-3 rounded-xl bg-slate-50/90 px-3 py-2 ring-1 ring-slate-200/60">
               <button
                 type="button"
@@ -103,6 +155,48 @@ const StoreSettings = () => {
                 }`}
               >
                 {acceptingOrders ? "On" : "Off"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-lg rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 ring-1 ring-slate-900/[0.03]">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-slate-900">Cash on Delivery (COD)</p>
+            {/* <p className="text-xs leading-relaxed text-slate-500">
+              {codEnabled
+                ? "Customers can choose COD or UPI on the cart payment step."
+                : "COD is hidden; checkout shows UPI only (online payment)."}
+            </p> */}
+            <div className="flex w-fit items-center gap-3 rounded-xl bg-slate-50/90 px-3 py-2 ring-1 ring-slate-200/60">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={codEnabled}
+                aria-label={
+                  codEnabled
+                    ? "Cash on Delivery is offered at checkout"
+                    : "Cash on Delivery is turned off at checkout"
+                }
+                onClick={() => void toggleCodEnabled()}
+                className={`relative h-9 w-[3.25rem] shrink-0 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  codEnabled
+                    ? "bg-emerald-600 shadow-inner shadow-emerald-900/20"
+                    : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none absolute top-1 left-1 h-7 w-7 rounded-full bg-white shadow-md ${
+                    codEnabled ? "translate-x-[1.35rem]" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <span
+                className={`min-w-[2.25rem] text-xs font-bold uppercase tracking-wide ${
+                  codEnabled ? "text-emerald-800" : "text-amber-800"
+                }`}
+              >
+                {codEnabled ? "On" : "Off"}
               </span>
             </div>
           </div>

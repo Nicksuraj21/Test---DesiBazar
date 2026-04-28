@@ -28,6 +28,7 @@ const Cart = () => {
         setCartItems,
         setShowUserLogin, // 👈 ADD THIS
         storeAcceptingOrders,
+        storeCodEnabled,
     } = useAppContext();
 
     const [cartArray, setCartArray] = useState([]);
@@ -116,6 +117,23 @@ const Cart = () => {
     const remainingForFreeDelivery = freeDeliveryTarget - cartAmount;
 
     const ordersPaused = storeAcceptingOrders === false && cartArray.length > 0;
+
+    /** Seller Store: COD toggle off → UPI only at checkout */
+    const codAvailable = storeCodEnabled !== false;
+    const checkoutPayment =
+        !codAvailable && paymentOption === "COD" ? "UPI" : paymentOption;
+    const paymentMethodOptions = codAvailable
+        ? [
+            { value: "COD", label: "Cash On Delivery" },
+            { value: "UPI", label: "UPI - Online" },
+        ]
+        : [{ value: "UPI", label: "UPI - Online" }];
+
+    useEffect(() => {
+        if (!codAvailable && paymentOption === "COD") {
+            setPaymentOption("UPI");
+        }
+    }, [codAvailable, paymentOption]);
 
     useEffect(() => {
         setRedeemPointsInput((prev) => Math.min(Math.max(0, prev), maxRedeem));
@@ -353,7 +371,11 @@ const Cart = () => {
         }
 
         if (finalTotal < 1) {
-            toast.error("UPI payment needs at least ₹1 after rewards. Use Cash on Delivery or fewer points.");
+            toast.error(
+                codAvailable
+                    ? "UPI payment needs at least ₹1 after rewards. Use Cash on Delivery or fewer points."
+                    : "UPI payment needs at least ₹1 after rewards. Use fewer reward points."
+            );
             return;
         }
 
@@ -543,7 +565,7 @@ const Cart = () => {
 
     const processOrder = async () => {
         try {
-            if (paymentOption === "COD") {
+            if (checkoutPayment === "COD") {
 
                 const location = await getOrderLocation();
 
@@ -865,12 +887,9 @@ const Cart = () => {
                     <p className="text-xs text-gray-400 uppercase mt-5">Payment</p>
                     <CustomSelect
                         aria-label="Payment method"
-                        value={paymentOption}
+                        value={checkoutPayment}
                         onChange={setPaymentOption}
-                        options={[
-                            { value: "COD", label: "Cash On Delivery" },
-                            { value: "UPI", label: "UPI - Online" },
-                        ]}
+                        options={paymentMethodOptions}
                         className="mt-1 w-full"
                         triggerClassName="!rounded-md !border-gray-200 !px-3 !py-2 !text-sm"
                     />
@@ -969,9 +988,11 @@ const Cart = () => {
 
 
 
-                    {paymentOption === "UPI" && finalTotal < 1 && cartArray.length > 0 && (
+                    {checkoutPayment === "UPI" && finalTotal < 1 && cartArray.length > 0 && (
                         <p className="text-xs text-red-600 mt-3 text-center">
-                            UPI needs at least ₹1 payable. Use COD for ₹0 total or reduce reward use.
+                            {codAvailable
+                                ? "UPI needs at least ₹1 payable. Use COD for ₹0 total or reduce reward use."
+                                : "UPI needs at least ₹1 payable. Reduce reward points so the payable amount is at least ₹1."}
                         </p>
                     )}
 
@@ -981,7 +1002,7 @@ const Cart = () => {
                             isPlacingOrder ||
                             cartArray.length === 0 ||
                             ordersPaused ||
-                            (paymentOption === "UPI" && finalTotal < 1)
+                            (checkoutPayment === "UPI" && finalTotal < 1)
                         }
                         className={`w-full py-3 mt-6 rounded-lg font-medium transition disabled:cursor-not-allowed ${
                             ordersPaused
@@ -995,7 +1016,7 @@ const Cart = () => {
                                 ? ORDERS_PAUSED_BUTTON
                                 : isPlacingOrder
                                     ? "Placing Order..."
-                                    : paymentOption === "COD"
+                                    : checkoutPayment === "COD"
                                         ? "Place Order"
                                         : "Proceed to Pay"}
                     </button>

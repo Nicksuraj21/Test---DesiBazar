@@ -10,3 +10,14 @@ export async function areStoreOrdersAccepted() {
     return true;
   }
 }
+
+/** Missing field / doc = COD allowed (backward compatible). */
+export async function isStoreCodEnabled() {
+  try {
+    const doc = await StoreSettings.findOne().lean();
+    if (!doc) return true;
+    return doc.codEnabled !== false;
+  } catch {
+    return true;
+  }
+}
