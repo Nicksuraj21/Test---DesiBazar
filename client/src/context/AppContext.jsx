@@ -283,6 +283,8 @@ export const AppContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isSeller, setIsSeller] = useState(false);
     const [sellerLoading, setSellerLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [adminLoading, setAdminLoading] = useState(true);
     const [showUserLogin, setShowUserLogin] = useState(false);
     const [products, setProducts] = useState([]);
     const [productsLoading, setProductsLoading] = useState(true);
@@ -359,6 +361,17 @@ export const AppContextProvider = ({ children }) => {
             setIsSeller(false);
         } finally {
             setSellerLoading(false);
+        }
+    };
+
+    const fetchAdmin = async () => {
+        try {
+            const { data } = await axios.get("/api/admin/is-auth");
+            setIsAdmin(!!data.success);
+        } catch {
+            setIsAdmin(false);
+        } finally {
+            setAdminLoading(false);
         }
     };
 
@@ -560,6 +573,7 @@ export const AppContextProvider = ({ children }) => {
 
         fetchUser();
         fetchSeller();
+        fetchAdmin();
 
         if (!userLocation) {
             requestLocation();
@@ -822,6 +836,9 @@ export const AppContextProvider = ({ children }) => {
             isSeller,
             setIsSeller,
             sellerLoading,
+            isAdmin,
+            setIsAdmin,
+            adminLoading,
             showUserLogin,
             setShowUserLogin,
             products,
@@ -857,6 +874,8 @@ export const AppContextProvider = ({ children }) => {
             user,
             isSeller,
             sellerLoading,
+            isAdmin,
+            adminLoading,
             showUserLogin,
             products,
             productsLoading,

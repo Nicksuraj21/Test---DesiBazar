@@ -1893,6 +1893,7 @@ import { useAppContext } from '../../context/AppContext'
 import { assets } from '../../assets/assets'
 import toast from 'react-hot-toast'
 import CustomSelect from '../../components/CustomSelect'
+import { printOrderInvoice } from '../../utils/printOrderInvoice'
 
 const ORDER_STATUS_OPTIONS = [
   'Order Placed',
@@ -1902,198 +1903,13 @@ const ORDER_STATUS_OPTIONS = [
   'Cancelled',
 ]
 
+/** Seller cannot change status once cancelled or delivered (same UX as cancel lock). */
+const isSellerOrderStatusLocked = (status) =>
+  status === 'Cancelled' ||
+  status === 'Canceled' ||
+  status === 'Delivered'
+
 const Orders = () => {
-
-
-  // ************invoice code Start*********************
-
-  const printInvoice = (order) => {
-    const printWindow = window.open("", "_blank")
-
-    const itemsHtml = (order.items || []).map(item => {
-      const price = item.product?.offerPrice || item.product?.price || 0
-      const total = price * item.quantity
-
-      return `
-      <tr>
-        <td>${item.product?.name || "Deleted Product"}</td>
-        <td style="text-align:center;">${item.quantity}</td>
-        <td style="text-align:right;">₹${price}</td>
-        <td style="text-align:right;">₹${total}</td>
-      </tr>
-    `
-    }).join("")
-
-    const deliveryCharge = order.deliveryCharge || 0
-    const discount = order.discount || 0
-    const rewardUsed = order.rewardPointsUsed || 0
-    const subtotal =
-      order.subtotal != null && order.subtotal !== undefined
-        ? order.subtotal
-        : Math.max(0, order.amount + rewardUsed - deliveryCharge + discount)
-    const pointsEarned = Math.floor(Number(order.amount) / 50)
-
-    printWindow.document.write(`
-    <html>
-      <head>
-        <title>Invoice</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 15px;
-            color: #333;
-            font-size: 12px;
-          }
-
-          .container {
-            border: 1px solid #ddd;
-            padding: 15px;
-          }
-
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-          }
-
-          .brand {
-            font-size: 18px;
-            font-weight: bold;
-            color: #16a34a;
-          }
-
-          .invoice-title {
-            font-size: 14px;
-            font-weight: bold;
-          }
-
-          .section {
-            margin-top: 10px;
-          }
-
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 6px;
-          }
-
-          th {
-            background: #f3f4f6;
-            padding: 6px;
-            font-size: 12px;
-            text-align: left;
-          }
-
-          td {
-            padding: 5px;
-            border-bottom: 1px solid #eee;
-            font-size: 12px;
-          }
-
-          .summary {
-            margin-top: 10px;
-            display: flex;
-            justify-content: flex-end;
-          }
-
-          .summary-box {
-            width: 220px;
-          }
-
-          .summary-box p {
-            display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-          }
-
-          .total {
-            font-weight: bold;
-            border-top: 1px solid #000;
-            padding-top: 4px;
-            font-size: 14px;
-          }
-
-          .footer {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 11px;
-            color: #777;
-          }
-
-          @media print {
-            body { margin: 0; }
-          }
-        </style>
-      </head>
-
-      <body>
-
-        <div class="container">
-
-          <div class="header">
-            <div class="brand">DesiBazar</div>
-            <div class="invoice-title">INVOICE</div>
-          </div>
-
-          <div>
-            <strong>Order id:</strong> #${order._id.slice(-6)} |
-            <strong>Date:</strong> ${new Date(order.createdAt).toLocaleString("en-IN")}
-          </div>
-
-        <div class="section">
-  <strong>Customer Details:</strong><br/>
-  ${order.address?.firstName || ""} ${order.address?.lastName || ""},<br/>
-  ${order.address?.street || ""}, ${order.address?.city || ""}<br/>
-  Phone: ${order.address?.phone || ""}
-</div>
-
-          <div class="section">
-            <table>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th style="text-align:center;">Qty</th>
-                  <th style="text-align:right;">Price</th>
-                  <th style="text-align:right;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="summary">
-            <div class="summary-box">
-              <p><span>Subtotal</span><span>₹${subtotal}</span></p>
-              <p><span>Discount</span><span>- ₹${discount}</span></p>
-              <p><span>Delivery</span><span>${deliveryCharge === 0 ? "Free" : "₹" + deliveryCharge}</span></p>
-              ${rewardUsed > 0 ? `<p><span>Reward points redeemed</span><span>− ₹${rewardUsed}</span></p>` : ""}
-              <p class="total"><span>Total payable</span><span>₹${order.amount}</span></p>
-              ${pointsEarned > 0 ? `<p style="font-size:11px;color:#666;margin-top:6px;"><span>Reward points earned</span><span>${pointsEarned} pts</span></p>` : ""}
-            </div>
-          </div>
-
-          <div class="section">
-            <strong>Payment:</strong> ${order.paymentType}
-          </div>
-
-          <div class="footer">
-            Thank you for shopping with DesiBazar ❤️
-          </div>
-
-        </div>
-
-      </body>
-    </html>
-  `)
-
-    printWindow.document.close()
-    printWindow.print()
-  }
-
-  // ************invoice code end*********************
 
 
 
@@ -2294,6 +2110,16 @@ const Orders = () => {
   // STATUS CHANGE
   // =========================
   const changeStatus = async (orderId, status) => {
+    const current = orders.find((o) => o._id === orderId)
+    if (current && isSellerOrderStatusLocked(current.status)) {
+      toast.error(
+        current.status === 'Delivered'
+          ? 'Delivered orders cannot be edited'
+          : 'This order cannot be edited'
+      )
+      return
+    }
+
     const normalizedStatus =
       status === 'Canceled' || status === 'Cancelled' ? 'Cancelled' : status
 
@@ -2494,7 +2320,7 @@ const Orders = () => {
                 {/* 👇 print button */}
                 <button
                   type="button"
-                  onClick={() => printInvoice(order)}
+                  onClick={() => printOrderInvoice(order)}
                   className="mt-2 inline-flex w-[60%] shrink-0 items-center justify-start gap-1 px-3 py-1.5 text-xs bg-black text-white rounded hover:bg-gray-800 md:w-auto">
                   🖨 Print Invoice
                 </button>
@@ -2512,13 +2338,13 @@ const Orders = () => {
                   value={order.status}
                   onChange={(v) => changeStatus(order._id, v)}
                   options={ORDER_STATUS_OPTIONS}
-                  disabled={order.status === 'Cancelled' || order.status === 'Canceled'}
+                  disabled={isSellerOrderStatusLocked(order.status)}
                   className="w-full max-w-xs md:max-w-none md:w-auto md:min-w-[9.5rem]"
                   menuMinWidth={240}
                   menuItemsNoWrap
                   triggerClassName={[
                     '!px-2 !py-1 !gap-1 !shadow-none md:!min-h-0',
-                    order.status === 'Cancelled' || order.status === 'Canceled'
+                    isSellerOrderStatusLocked(order.status)
                       ? '!bg-gray-200 !cursor-not-allowed'
                       : '',
                   ]
@@ -2911,7 +2737,7 @@ export default Orders
 //                 </p>
 
 //                 <button
-//                   onClick={() => printInvoice(order)}
+//                   onClick={() => printOrderInvoice(order)}
 //                   className="px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800">
 //                   🖨 Print Invoice
 //                 </button>

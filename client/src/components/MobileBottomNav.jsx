@@ -61,6 +61,9 @@ const MobileBottomNav = () => {
   const count = getCartCount();
 
   if (location.pathname.includes("seller")) return null;
+  const p = (location.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+  if (p === "/admin" || p.startsWith("/admin/") || p === "/link/admin" || p.startsWith("/link/admin/"))
+    return null;
 
   const onProfile = () => {
     if (user) navigate("/profile");

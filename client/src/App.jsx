@@ -310,6 +310,10 @@ import TopCustomers from './pages/seller/TopCustomers';
 import AIMarketing from './pages/seller/AIMarketing';
 import RewardPoints from './pages/seller/RewardPoints';
 import StoreSettings from './pages/seller/StoreSettings';
+import AdminLogin from './components/admin/AdminLogin';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminStoreSettings from './pages/admin/AdminStoreSettings';
+import AdminUpiHistory from './pages/admin/AdminUpiHistory';
 import Loading from './components/Loading';
 import ScrollToTop from './components/ScrollToTop';
 import MobileBottomNav from "./components/MobileBottomNav"
@@ -325,9 +329,15 @@ const App = () => {
   const isSellerPath = location.pathname.includes("seller");
   const pathNorm = (location.pathname.replace(/\/+$/, "") || "/").toLowerCase();
   const isSearchPath = pathNorm === "/search";
-  const { showUserLogin, isSeller, loading, sellerLoading, locationBlocked } = useAppContext();
+  const isAdminPath =
+    pathNorm === "/admin" ||
+    pathNorm.startsWith("/admin/") ||
+    pathNorm === "/link/admin" ||
+    pathNorm.startsWith("/link/admin/");
+  const { showUserLogin, isSeller, loading, sellerLoading, adminLoading, isAdmin, locationBlocked } =
+    useAppContext();
 
-  if (loading || sellerLoading) {
+  if (loading || sellerLoading || adminLoading) {
     return (
       <div className="relative isolate min-h-screen min-h-[100dvh]">
         <div className="app-page-gradient" aria-hidden="true" />
@@ -344,7 +354,7 @@ const App = () => {
 
       <div className="relative z-[1]">
 
-      {!isSellerPath &&
+      {!isSellerPath && !isAdminPath &&
         (isSearchPath ? (
           <div className="max-md:hidden md:contents">
             <Navbar />
@@ -353,7 +363,7 @@ const App = () => {
           <Navbar />
         ))}
 
-      {locationBlocked && showLocationBanner && (
+      {locationBlocked && showLocationBanner && !isAdminPath && (
         <div className="flex items-center justify-between border-b border-amber-200/60 bg-amber-50 px-3 py-1.5 text-xs">
 
           <div className="flex items-center gap-2 text-amber-900">
@@ -386,7 +396,7 @@ const App = () => {
       <Toaster />
 
       <div
-        className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32 max-md:pb-[6.5rem]"}`}
+        className={`${isSellerPath || isAdminPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32 max-md:pb-[6.5rem]"}`}
       >
         <ScrollToTop />
 
@@ -414,12 +424,27 @@ const App = () => {
             <Route path='reward-points' element={<RewardPoints />} />
           </Route>
 
+          <Route
+            path="/admin"
+            element={isAdmin ? <AdminLayout /> : <AdminLogin />}
+          >
+            <Route index element={isAdmin ? <AdminStoreSettings /> : null} />
+            <Route path="history" element={isAdmin ? <AdminUpiHistory /> : null} />
+          </Route>
+          <Route
+            path="/link/admin"
+            element={isAdmin ? <AdminLayout /> : <AdminLogin />}
+          >
+            <Route index element={isAdmin ? <AdminStoreSettings /> : null} />
+            <Route path="history" element={isAdmin ? <AdminUpiHistory /> : null} />
+          </Route>
+
         </Routes>
       </div>
 
-      {!isSellerPath && <MobileBottomNav />}
+      {!isSellerPath && !isAdminPath && <MobileBottomNav />}
 
-      {!isSellerPath && <Footer />}
+      {!isSellerPath && !isAdminPath && <Footer />}
       </div>
     </div>
   );

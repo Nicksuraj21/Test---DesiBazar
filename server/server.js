@@ -463,6 +463,7 @@ import connectCloudinary from "./configs/cloudinary.js";
 
 import userRouter from "./routes/userRoute.js";
 import sellerRouter from "./routes/sellerRoute.js";
+import adminRouter from "./routes/adminRoute.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import addressRouter from "./routes/addressRoute.js";
@@ -577,6 +578,7 @@ app.get("/", (req, res) => res.send("API is Working"));
 
 app.use("/api/user", userRouter);
 app.use("/api/seller", sellerRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/address", addressRouter);

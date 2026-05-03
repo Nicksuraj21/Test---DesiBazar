@@ -2771,6 +2771,13 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
+        if (order.status === "Delivered" && !req.adminAuth) {
+            return res.json({
+                success: false,
+                message: "Delivered orders cannot be changed"
+            });
+        }
+
         // =========================
         // IF SELLER CANCELS ORDER
         // =========================
